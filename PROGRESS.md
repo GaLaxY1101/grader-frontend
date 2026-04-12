@@ -56,3 +56,24 @@
 - Install remaining dependencies: MUI v5, NextAuth v4, openapi-fetch, React Hook Form, Zod, Redux Toolkit, react-toastify, Vitest
 - Set up folder structure per CLAUDE.md
 - Configure NextAuth with Keycloak provider
+
+---
+
+## 2026-04-12 — Husky + lint-staged pre-commit hook
+
+### Done
+- Installed `husky` v9 and `lint-staged`
+- Initialized Husky (`pnpm exec husky init`) — adds `prepare` script so hooks install automatically on `pnpm install`
+- `.husky/pre-commit` runs `pnpm exec lint-staged`
+- `lint-staged` config in `package.json`: runs `prettier --write` then `eslint --fix --max-warnings=0` on staged `src/**/*.{ts,tsx}` files only
+
+### Decisions
+- Pre-commit chosen over pre-push so bad formatting never enters git history at all
+- lint-staged scopes the run to staged files only — hook completes in under a second even as the project grows
+- `--max-warnings=0` on ESLint means warnings block the commit; use `_` prefix on variables to intentionally suppress unused-var warnings
+- `prepare` script means any new contributor gets hooks automatically after `pnpm install` — no manual setup needed
+
+### Next
+- Install remaining dependencies: MUI v5, NextAuth v4, openapi-fetch, React Hook Form, Zod, Redux Toolkit, react-toastify, Vitest
+- Set up folder structure per CLAUDE.md
+- Configure NextAuth with Keycloak provider
