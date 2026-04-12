@@ -9,12 +9,19 @@
     "lint": "next lint",
     "lint:eslint": "eslint \"src/**/*.{ts,tsx}\" --cache",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "tsc:test": "tsc --noEmit --project ./tsconfig.json"
+    "tsc:test": "tsc --noEmit --project ./tsconfig.json",
+    "prepare": "husky"
   },
   "dependencies": {
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --fix --max-warnings=0"
+    ]
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -27,6 +34,8 @@
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.8.2",
     "prettier-plugin-organize-imports": "^4.3.0",
     "typescript": "^5"
