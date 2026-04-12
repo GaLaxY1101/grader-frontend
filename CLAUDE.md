@@ -291,6 +291,15 @@ pnpm generate-api     # regenerate API types from Spring Boot
 
 ---
 
+## Progress tracking
+
+Maintain `PROGRESS.md` in the project root at all times:
+- Create it if it doesn't exist
+- Update it after every task or meaningful change
+- Log what was done, what decisions were made, and what comes next
+
+---
+
 ## Learning notes
 This is also a learning project. When implementing something new:
 - Explain what you are doing and why
