@@ -291,6 +291,41 @@ pnpm generate-api     # regenerate API types from Spring Boot
 
 ---
 
+## Git commit conventions
+
+Use semantic commit messages — every commit must start with a type prefix:
+
+| Prefix | When to use |
+|--------|-------------|
+| `feat:` | new feature or page |
+| `fix:` | bug fix |
+| `chore:` | tooling, config, deps, scripts — no production code |
+| `refactor:` | code restructure with no behaviour change |
+| `style:` | formatting only (Prettier, whitespace) |
+| `test:` | adding or fixing tests |
+| `docs:` | documentation changes only |
+| `ci:` | CI/CD pipeline changes |
+
+### Rules
+- Use lowercase, imperative mood: `feat: add course list page` not `Added course list page`
+- Keep the subject line under 72 characters
+- Add a body if the "why" is not obvious from the subject
+- Reference issues in the body: `Closes #42`
+
+```bash
+# CORRECT
+git commit -m "chore: add ESLint + Prettier config"
+git commit -m "feat: add course list page with role guard"
+git commit -m "fix: handle null session in useAuth hook"
+
+# WRONG
+git commit -m "update stuff"
+git commit -m "WIP"
+git commit -m "Fixed bug"
+```
+
+---
+
 ## Progress tracking
 
 Maintain `PROGRESS.md` in the project root at all times:
