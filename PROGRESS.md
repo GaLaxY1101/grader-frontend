@@ -73,6 +73,24 @@
 - `--max-warnings=0` on ESLint means warnings block the commit; use `_` prefix on variables to intentionally suppress unused-var warnings
 - `prepare` script means any new contributor gets hooks automatically after `pnpm install` — no manual setup needed
 
+---
+
+## 2026-04-12 — Environment variable configuration
+
+### Done
+- Installed `@t3-oss/env-nextjs` and `zod`
+- Created `.env.local` with all required values (not committed — covered by `.env*.local` in `.gitignore`)
+- Created `.env.sample` with empty values — committed as reference for new contributors
+- Created `src/utils/env.ts` using `createEnv` from `@t3-oss/env-nextjs`
+- `pnpm tsc --noEmit` passes with zero errors
+- `pnpm dev` starts cleanly at http://localhost:3000, reads `.env.local`, no validation errors
+
+### Decisions
+- `@t3-oss/env-nextjs` validates env vars at build time — if a required variable is missing or malformed, the app refuses to start with a clear error rather than failing silently at runtime
+- `server` block vars are stripped from client bundles by Next.js — accessing them in a client component throws at runtime, enforcing the server/client boundary
+- `NEXT_PUBLIC_` prefix is Next.js convention for vars accessible in the browser; everything else stays server-only
+- `.env.sample` committed as contributor reference; `.env.local` stays gitignored forever
+
 ### Next
 - Install remaining dependencies: MUI v5, NextAuth v4, openapi-fetch, React Hook Form, Zod, Redux Toolkit, react-toastify, Vitest
 - Set up folder structure per CLAUDE.md
