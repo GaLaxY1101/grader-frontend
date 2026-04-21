@@ -95,3 +95,83 @@
 - Install remaining dependencies: MUI v5, NextAuth v4, openapi-fetch, React Hook Form, Zod, Redux Toolkit, react-toastify, Vitest
 - Set up folder structure per CLAUDE.md
 - Configure NextAuth with Keycloak provider
+
+---
+
+## 2026-04-12 — MUI theme configuration
+
+### Done
+- Installed MUI v5 stack: `@mui/material`, `@mui/icons-material`, `@mui/material-nextjs`, `@mui/lab`, `@mui/x-data-grid`, `@mui/x-date-pickers`, `@mui/system`, `@emotion/react`, `@emotion/styled`, `@emotion/cache`
+- Created `src/styles/theme.ts` — university blue (`#1565C0`) primary palette, Inter font stack, 8px border radius, component overrides for Button, Card, TableCell
+- Created `src/providers/ThemeProvider.tsx` — wraps `AppRouterCacheProvider` (SSR-safe emotion cache) + `MuiThemeProvider` + `CssBaseline`
+- Replaced `src/app/layout.tsx` — removed Geist fonts and `globals.css`, wired in `ThemeProvider`
+- Replaced `src/app/page.tsx` — MUI smoke-test: blue h1 heading + contained button on `#F5F7FA` background
+- `pnpm tsc --noEmit` passes with zero errors
+
+### Decisions
+- `AppRouterCacheProvider` with `enableCssLayer: true` is required for Next.js 14 App Router + emotion SSR — without it, styles hydrate incorrectly and cause flash-of-unstyled-content
+- Sub-path imports (`@mui/material/Box` vs `@mui/material`) used in server components to avoid the barrel-import bundler warning
+- `CssBaseline` injected inside `ThemeProvider` so it picks up the theme's background color (`#F5F7FA`) automatically
+
+### Next
+- Configure NextAuth with Keycloak provider
+- Add remaining dependencies: openapi-fetch, React Hook Form, Redux Toolkit, react-toastify, Vitest
+- Build the authenticated layout (Sidebar + Topbar)
+
+---
+
+## 2026-04-12 — NextAuth + Keycloak configuration
+
+### Done
+- Installed `next-auth`, `jwt-decode`, `jsonwebtoken`, `@types/jsonwebtoken`
+- Created `src/lib/server/auth.ts` — full `AuthOptions` with:
+  - Keycloak OAuth provider (PKCE + state checks, reads env vars via `src/utils/env.ts`)
+  - `jwt` callback: stores `access_token`, `id_token`, `refresh_token`, `expires_at`, and `app_roles` (decoded from JWT claim) on initial sign-in; silently refreshes expired tokens with a 30s safety margin; marks `error: 'RefreshAccessTokenError'` on failure
+  - `session` callback: exposes `access_token`, `id_token`, `roles`, and `error` to client — nothing else leaks through
+  - Module augmentation for `Session` and `JWT` interfaces — TypeScript knows about the custom fields
+- Created `src/app/api/auth/[...nextauth]/route.ts` — standard NextAuth route handler
+- Created `src/middleware.ts` — `next-auth/middleware` protects all routes except `/signin`, `/api/auth/*`, and Next.js internals
+- Created `src/app/(auth)/signin/page.tsx` — sign-in page with MUI layout, single "Sign in with Keycloak" button
+- Created `src/app/(protected)/layout.tsx` — server-side session guard; redirects unauthenticated users to `/signin`
+- Created `src/app/(protected)/dashboard/page.tsx` — placeholder dashboard showing user name and roles
+- Updated `src/app/layout.tsx` — fetches session server-side, passes it to `SessionProvider` to avoid client-side loading flicker
+- Created `src/providers/SessionProvider.tsx` — thin wrapper around `NextAuthSessionProvider` that accepts a pre-fetched session
+- Created `src/hooks/useAuth.ts` — `useAuth` hook exposing `user`, `roles`, `accessToken`, `isLoading`, `isAuthenticated`, `hasRole(role)`; `Role` const defined here
+- `pnpm tsc --noEmit` passes with zero errors
+
+### Decisions
+- Token refresh happens in the `jwt` callback (server-only) — the client never sees raw tokens, only the stripped session object
+- `app_roles` claim is read from the decoded access token at sign-in and cached in the JWT; no re-decode needed on every request
+- Session is fetched once in `RootLayout` and passed down via `SessionProvider` — avoids a waterfall where every client component independently waits for the session cookie to be validated
+- Two layers of protection: `middleware.ts` (edge, fast) redirects before the page even renders; `(protected)/layout.tsx` (server component) double-checks — belt-and-suspenders for SSR correctness
+- `useAuth` is the single entry point for role checks in client components; raw `useSession` should not be used directly
+
+### Next
+- Run Keycloak in Docker and test the full login flow end-to-end
+- Add remaining dependencies: openapi-fetch, React Hook Form, Redux Toolkit, react-toastify, Vitest
+- Build the authenticated layout (Sidebar + Topbar)
+
+---
+
+## 2026-04-21 — Keycloak login/logout flow end-to-end
+
+### Done
+- Tested full login flow: `/` → `/signin` → Keycloak → `/dashboard` showing user name and roles
+- Fixed root `/` page: replaced MUI placeholder with a server-side `redirect('/dashboard')`
+- Added `LogoutButton` client component (`src/components/common/LogoutButton.tsx`) on the dashboard
+- Created `src/app/api/auth/logout/route.ts` — server route that:
+  - Reads `id_token` from the active session
+  - Clears Next.js session cookies (`next-auth.session-token`)
+  - Redirects to Keycloak's end-session endpoint with `client_id`, `id_token_hint`, and `post_logout_redirect_uri`
+- Fixed `signIn('keycloak', { callbackUrl: '/dashboard' })` — without explicit callbackUrl, NextAuth defaulted to redirecting back to `/signin` after login
+- Registered `http://localhost:3000/signin` as a valid post-logout redirect URI in Keycloak
+
+### Decisions
+- Custom `/api/auth/logout` route instead of NextAuth's `signOut()` — `signOut()` only clears the Next.js session but leaves the Keycloak SSO session alive, causing sign-in to fail immediately after logout
+- `client_id` included in logout params so Keycloak can validate the redirect URI even when `id_token_hint` is absent
+- Keycloak runs on port 9080 (Spring Boot occupies 8080)
+
+### Next
+- Move `Role` constant from `useAuth.ts` to `src/utils/roles.ts` (per CLAUDE.md)
+- Add remaining dependencies: openapi-fetch, React Hook Form, Redux Toolkit, react-toastify, Vitest
+- Build the authenticated layout (Sidebar + Topbar)
