@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { auth } from '@/lib/server/auth';
 import { env } from '@/utils/env';
 import { getServerSession } from 'next-auth';

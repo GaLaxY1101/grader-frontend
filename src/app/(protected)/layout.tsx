@@ -1,8 +1,10 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { auth } from '@/lib/server/auth';
-import { type Role } from '@/utils/roles';
+import { Role, type Role as RoleType } from '@/utils/roles';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
+
+const APP_ROLES = new Set<string>([Role.STUDENT, Role.TEACHER, Role.ADMIN]);
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(auth);
@@ -11,9 +13,8 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     redirect('/signin');
   }
 
-  const rawRole = session.roles?.[0];
-  console.log('[ProtectedLayout] session.roles =', session.roles);
-  const primaryRole = (rawRole ?? 'STUDENT') as Role;
+  const primaryRole: RoleType =
+    (session.roles?.find((r) => APP_ROLES.has(r)) as RoleType | undefined) ?? Role.STUDENT;
   const userName = session.user?.name ?? 'Unknown';
   const userEmail = session.user?.email ?? '';
 

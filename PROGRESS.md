@@ -262,6 +262,84 @@ const { data, error } = await client.GET('/api/courses');
 
 ---
 
+## 2026-04-22 — Course detail page
+
+### Done
+- Extended `src/lib/api/courses.ts` — added `getCourseStudents` and `getCourseTeachers` (GET `/api/courses/{id}/students` and `/teachers`)
+- Created `src/lib/api/assignments.ts` — `getAssignmentsByCourse` (GET `/api/courses/{courseId}/assignments`) and `getAssignmentById` (GET `/api/assignments/{id}`)
+- Created `src/components/assignments/AssignmentCard.tsx` — Server Component; clickable card linking to `/courses/{courseId}/assignments/{id}`; shows title, description (2-line clamp), deadline with color-coded urgency (past → error.main, ≤3 days → warning.main, future → text.secondary), max score Chip, type badge (Code/File/Text with icon)
+- Created `src/components/courses/CourseInfoCard.tsx` — Server Component; displays course name (h4), description, info grid (academic year, semester, date range), and active/inactive status Chip
+- Rewrote `src/app/(protected)/courses/[id]/page.tsx` — Server Component; fetches all data in parallel via `Promise.all`; renders CourseInfoCard, assignment list with EmptyState fallback, and students/teachers sections (TEACHER/ADMIN only)
+- Created `src/app/(protected)/courses/[id]/loading.tsx` — Next.js streaming skeleton with three Skeleton rectangles
+- Created `src/app/(protected)/courses/[id]/error.tsx` — Next.js error boundary with "Try again" reset button
+- `pnpm tsc --noEmit` passes with zero errors
+
+### Decisions
+- `CourseDetailResponse` from `GET /api/courses/{id}` already includes students, teachers, and assignments. Separate API calls are made anyway per the learning-project spec — the explicit `Promise.all` teaches the parallel-fetch pattern clearly
+- Deadline color is computed server-side; MUI `sx` accepts theme palette strings like `'error.main'` so no `useTheme` hook is needed in the server component
+- `Button component={Link}` used for the back button so it stays a server component with no `useRouter`
+- Students/teachers sections are conditionally rendered by checking `roles.includes(Role.TEACHER) || roles.includes(Role.ADMIN)` — a single `canManage` boolean derived at the top of the function
+
+### Next
+- Build assignment detail + submission page (`/courses/[id]/assignments/[assignmentId]`)
+- Add Redux Toolkit, Vitest
+
+---
+
+## 2026-04-22 — Submissions module (BE + FE)
+
+### Done
+- **BE**: Submissions module fully implemented (Session 6):
+  - `V9__init_submissions.sql` — `submissions` table with status, code_content, score, pipeline fields, and 4 indexes
+  - `SubmissionStatus` enum: PENDING / RUNNING / PASSED / FAILED / ERROR
+  - `Submission` entity with `startPipeline()` and `applyResult()` mutation methods (ready for GitLab webhook)
+  - `SubmissionRepository` — JPQL fetch-join queries to prevent N+1 on student → user chain
+  - `StudentRepository.findByUser_Email()` added (mirrors TeacherRepository pattern)
+  - `SubmissionServiceImpl` — 5 operations; students enforced to own submissions only via `enforceStudentOwnership()`
+  - `SubmissionController` — 5 endpoints (POST create, GET by id, GET status, GET all for assignment, GET my latest)
+  - 11 unit tests: happy path, not-found, access-denial for each operation
+- `src/hooks/usePolling.ts` — generic polling hook; stops on terminal status; stable refs prevent stale closure bugs
+- `src/lib/api/submissions.ts` — server-side API helpers (`getSubmissionById`, `getMyLatestSubmission`, `listSubmissionsByAssignment`)
+- `src/components/submissions/SubmissionStatusBadge.tsx` — color-coded MUI Chip per status
+- `src/components/submissions/SubmissionForm.tsx` — textarea form; posts to BE; on success redirects to `/submissions/{id}`; shows "previous submission" notice if re-submitting
+- `src/components/submissions/SubmissionList.tsx` — teacher view; clickable rows linking to `/submissions/{id}`
+- `src/app/(protected)/courses/[id]/assignments/[assignmentId]/page.tsx` — Server Component; role-aware: form for students, submission table for teachers/admins; parallel fetch of assignment + role-specific data; `loading.tsx` + `error.tsx` added
+- `src/app/(protected)/submissions/[id]/page.tsx` — client component; polls `/api/submissions/{id}/status` every 3 s; spinner while PENDING/RUNNING; pipeline output in monospace code block when done
+- `pnpm tsc --noEmit` passes with zero errors
+
+### Decisions
+- **Ownership enforcement in service, not controller**: `@PreAuthorize` sets the role gate; `enforceStudentOwnership()` checks identity inside the service so the same method serves both students (own only) and teachers (any)
+- **JPQL fetch joins in repository**: `Submission → Student → User` is a two-hop lazy chain; fetching eagerly in the query avoids N+1 without making entity relationships `EAGER`
+- **`usePolling` stable refs**: `fetcherRef` and `stopWhenRef` hold the latest function values so the `setInterval` callback never closes over stale props
+- **Temporary `as any` casts in `submissions.ts` and `submissions/[id]/page.tsx`**: new BE endpoints are not in generated types yet — run `pnpm generate-api` after starting BE to replace these with proper typed calls
+- **File upload deferred**: form shows an info alert for file-upload assignments; BE model already supports it via `code_content` extension
+
+### Next
+- Start BE → run `pnpm generate-api` → replace `as any` casts with typed calls
+- Session 7 (BE): GitLab API client, push code on submission, webhook endpoint
+- Admin page (`/admin`): user and group management tables
+- Vitest setup for FE unit tests
+
+---
+
+## 2026-04-22 — Create Course dialog + Sidebar role fix
+
+### Done
+- Fixed `src/app/(protected)/layout.tsx` — `session.roles[0]` was picking up Keycloak's internal roles (`default-roles-*`, `offline_access`, `uma_authorization`) instead of the app role; replaced with `roles.find(r => APP_ROLES.has(r))` which scans for the first `STUDENT`/`TEACHER`/`ADMIN` role
+- Installed `react-hook-form`, `react-toastify`, `@hookform/resolvers`
+- Added `<ToastContainer>` to `src/app/layout.tsx` (bottom-right, 4s auto-close)
+- Created `src/components/courses/CreateCourseDialog.tsx` — `'use client'` dialog; React Hook Form + Zod schema; posts to `POST /api/courses` via `apiClient`; shows success/error toasts; calls `router.refresh()` so the server component re-fetches the course list without a full navigation
+- Created `src/components/courses/CreateCourseButton.tsx` — `'use client'` button that owns the `open` state; keeps the courses page a pure server component
+- Updated `src/app/(protected)/courses/page.tsx` — replaced the disabled Button with `<CreateCourseButton />`
+- `pnpm tsc --noEmit` passes with zero errors
+
+### Decisions
+- **`z.coerce.number()` rejected** — Zod v4 types its input as `unknown`, which conflicts with `zodResolver`'s type inference; used `z.number()` with RHF's `valueAsNumber: true` on the text input instead
+- **`LoadingButton` from `@mui/lab`** — MUI v5's `Button` has no `loading` prop (added in v6); `@mui/lab/LoadingButton` is already in the dep tree and covers the spinner-during-submit UX
+- **`router.refresh()`** — tells Next.js to re-run the server component's data fetch and stream the new HTML; no client-side state or re-render of the whole page needed
+
+---
+
 ## 2026-04-22 — Course list page
 
 ### Done
@@ -291,3 +369,26 @@ const { data, error } = await client.GET('/api/courses');
 ### Next
 - Build course detail page (`/courses/[id]`)
 - Build assignment detail + submission page
+
+---
+
+## 2026-04-22 — Layout fix + UI improvements
+
+### Done
+- **Layout gap fix**: removed redundant `ml: 240px` from `MainLayout` main area — MUI permanent `Drawer` already inserts a spacer div into the flex row, so the explicit margin doubled the offset
+- **Teachers in course header**: moved teachers out of a standalone section and into `CourseInfoCard` as avatar chips with tooltips; visible to all roles; dropped the now-redundant `getCourseTeachers` parallel fetch
+- **Edit Course** (`/courses/[id]`): `EditCourseDialog` pre-fills all fields from the current course; calls `PUT /api/courses/{id}`; `router.refresh()` re-fetches the server component on success
+- **Add Assignment** (`/courses/[id]`): `CreateAssignmentDialog` with task-type radio (Text / Code / File Upload); Code section shows language + CI config template; File section shows extensions, size, count; calls `POST /api/courses/{courseId}/assignments`
+- **Edit Assignment** (`/courses/[id]/assignments/[id]`): `EditAssignmentDialog` pre-fills title, description, max score, deadline (ISO → datetime-local conversion); calls `PUT /api/assignments/{id}`
+- **Delete Assignment** (`/courses/[id]/assignments/[id]`): `DeleteAssignmentButton` opens a confirmation dialog before calling `DELETE /api/assignments/{id}`; navigates back to course on success; dialog copy clarifies this is a soft delete
+- All buttons follow the client-wrapper pattern (e.g. `EditCourseButton`, `EditAssignmentButton`) to keep server components free of `'use client'`
+
+### Decisions
+- Confirmation dialog for delete: destructive action — one extra click is worth preventing accidental data loss
+- `toDatetimeLocal()` helper in `EditAssignmentDialog`: converts ISO offset string from the API to `YYYY-MM-DDTHH:mm` required by `<input type="datetime-local">`; displayed in the user's local timezone
+- Task type details (language, CI template, file settings) are not editable — `UpdateAssignmentRequest` on the BE intentionally omits them; edit dialog reflects this constraint
+
+### Next
+- Start BE → run `pnpm generate-api` → replace `as any` casts in submissions API with typed calls
+- Admin page: user and group management
+- Vitest setup for FE unit tests

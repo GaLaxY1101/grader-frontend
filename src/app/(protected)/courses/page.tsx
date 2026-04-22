@@ -1,12 +1,12 @@
 import { EmptyState } from '@/components/common/EmptyState';
 import { PageHeader } from '@/components/common/PageHeader';
 import { CoursesGrid } from '@/components/courses/CoursesGrid';
+import { CreateCourseButton } from '@/components/courses/CreateCourseButton';
 import { getCourses } from '@/lib/api/courses';
 import { auth } from '@/lib/server/auth';
 import { Role } from '@/utils/roles';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { getServerSession } from 'next-auth';
 
 function getSubtitle(roles: string[]): string {
@@ -45,13 +45,7 @@ export default async function CoursesPage() {
       <PageHeader
         title="Courses"
         subtitle={getSubtitle(roles)}
-        action={
-          canCreate ? (
-            <Button variant="contained" disabled>
-              Create Course
-            </Button>
-          ) : undefined
-        }
+        action={canCreate ? <CreateCourseButton /> : undefined}
       />
 
       {courseList.length === 0 ? (

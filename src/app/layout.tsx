@@ -3,6 +3,8 @@ import { SessionProvider } from '@/providers/SessionProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import type { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export const metadata: Metadata = {
   title: 'University Grader',
@@ -16,6 +18,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <ThemeProvider>
           <SessionProvider session={session}>{children}</SessionProvider>
+          <ToastContainer position="bottom-right" autoClose={4000} />
         </ThemeProvider>
       </body>
     </html>

@@ -6,8 +6,6 @@ import { type Role } from '@/utils/roles';
 import Box from '@mui/material/Box';
 import React from 'react';
 
-const SIDEBAR_WIDTH = 240;
-
 interface MainLayoutProps {
   children: React.ReactNode;
   userName: string;
@@ -28,7 +26,6 @@ export const MainLayout = ({ children, userName, userEmail, role }: MainLayoutPr
           display: 'flex',
           flexDirection: 'column',
           flexGrow: 1,
-          ml: `${SIDEBAR_WIDTH}px`,
           minWidth: 0,
         }}
       >
