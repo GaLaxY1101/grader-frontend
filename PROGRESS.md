@@ -259,3 +259,35 @@ const { data, error } = await client.GET('/api/courses');
 - Build course detail page (`/courses/[id]`)
 - Build assignment detail + submission page
 - Add React Hook Form, Redux Toolkit, react-toastify, Vitest
+
+---
+
+## 2026-04-22 — Course list page
+
+### Done
+- Created `src/lib/api/courses.ts` — `getCourses` and `getCourseById` functions using `createServerClient`; throws on API error so callers can try/catch or let Next.js error boundary catch it
+- Rewrote `src/components/courses/CourseCard.tsx`:
+  - Replaced `onClick`+`CardActionArea` with a Next.js `Link` wrapping the whole card via `Box component={Link}` (stays a Server Component — no 'use client')
+  - Hover effect: `boxShadow: 4` + `translateY(-2px)` via `sx` transition
+  - Academic year formatted as "2025/2026 · Semester 1"
+  - Semester badge: `Chip` variant outlined; active/inactive badge alongside it
+- Simplified `src/components/courses/CoursesGrid.tsx` — removed `'use client'` and `useRouter`; navigation is now handled by Link inside CourseCard
+- Rewrote `src/app/(protected)/courses/page.tsx` (Server Component):
+  - Reads session with `getServerSession(auth)` for role-aware text
+  - `PageHeader` title "Courses", subtitle varies by role (STUDENT/TEACHER/ADMIN)
+  - TEACHER and ADMIN see a disabled "Create Course" button in the action slot
+  - try/catch around `getCourses()` — shows inline `Alert` on API failure
+  - Empty state via `EmptyState` component with role-specific description
+  - 3-column grid (xs=12, sm=6, md=4) via `CoursesGrid`
+- Created `src/app/(protected)/courses/loading.tsx` — Next.js streaming loading UI using `LoadingSkeleton`
+- Created `src/app/(protected)/courses/error.tsx` — Next.js error boundary with "Try again" reset button
+- `pnpm tsc --noEmit` passes with zero errors
+
+### Decisions
+- Teacher/student count badges were omitted: `CourseResponse` from the API does not include aggregate counts. `CourseDetailResponse` has `teachers[]` and `students[]` arrays but requires a per-course fetch — not suitable for a list page.
+- `Box component={Link}` pattern chosen over `CardActionArea` so `CourseCard` stays a pure Server Component; `useRouter` is never needed if the entire card is a link
+- try/catch in the page (not just error.tsx): API failures show a friendly inline Alert rather than unmounting the whole subtree; error.tsx is the backstop for unexpected rendering errors
+
+### Next
+- Build course detail page (`/courses/[id]`)
+- Build assignment detail + submission page
