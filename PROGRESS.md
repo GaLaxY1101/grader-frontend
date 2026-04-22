@@ -173,5 +173,89 @@
 
 ### Next
 - Move `Role` constant from `useAuth.ts` to `src/utils/roles.ts` (per CLAUDE.md)
-- Add remaining dependencies: openapi-fetch, React Hook Form, Redux Toolkit, react-toastify, Vitest
+- Add remaining dependencies: React Hook Form, Redux Toolkit, react-toastify, Vitest
 - Build the authenticated layout (Sidebar + Topbar)
+
+---
+
+## 2026-04-21 — openapi-fetch API client
+
+### Done
+- Installed `openapi-fetch` (runtime) and `openapi-typescript@^6.7.4` (dev)
+- Added `generate-api` script to `package.json` — points at `http://localhost:8080/v3/api-docs`
+- Added `test:vitest` script to `package.json` for future Vitest integration
+- Generated `src/lib/api/types/index.ts` from live Spring Boot OpenAPI spec — **never edit manually**
+- Created `src/lib/api/client.ts` — `openapi-fetch` client for Client Components; JWT middleware reads `access_token` from `getSession()` and injects `Authorization: Bearer …` header automatically
+- Created `src/lib/api/serverClient.ts` — factory function for Server Components; uses `getServerSession()` which works in RSC/SSR context
+- Created `src/lib/api/index.ts` — re-exports `apiClient`, `createServerClient`, and the `paths` type
+- `pnpm tsc --noEmit` passes with zero errors
+
+### Decisions
+- `getSession()` (client-side) vs `getServerSession(auth)` (server-side) is the key split: Next.js forbids `next-auth/react` imports in server context, so two separate clients are needed
+- `openapi-typescript@6` (not v7) chosen because v7 changed the output shape in a way that requires openapi-fetch v1 — v6 + current openapi-fetch is the stable pairing
+- Middleware pattern on `baseClient` keeps auth concern in one place; no call site needs to set the Authorization header manually
+
+### Usage
+```ts
+// Client Component ('use client')
+import { apiClient } from '@/lib/api';
+const { data, error } = await apiClient.GET('/api/courses');
+
+// Server Component (no directive)
+import { createServerClient } from '@/lib/api';
+const client = await createServerClient();
+const { data, error } = await client.GET('/api/courses');
+```
+
+### Next
+- Move `Role` constant from `useAuth.ts` to `src/utils/roles.ts` (per CLAUDE.md)
+- Install React Hook Form, Zod (already present), Redux Toolkit, react-toastify, Vitest
+- Build the authenticated layout (Sidebar + Topbar)
+
+---
+
+## 2026-04-21 — Teacher courses list page
+
+### Done
+- Created `src/app/(protected)/courses/page.tsx` — Server Component, calls `GET /api/courses` via `createServerClient`; renders an inline error `Alert` on failure, empty-state text when no courses, or the grid
+- Created `src/components/courses/CourseCard.tsx` — MUI `Card` with course name, description (2-line clamp), academic year/semester, date range, and active/inactive `Chip`
+- Created `src/components/courses/CoursesGrid.tsx` — `'use client'` wrapper that renders a `Grid` of `CourseCard`s and handles click-navigation to `/courses/{id}`
+- `pnpm tsc:test` passes with zero errors
+
+### Decisions
+- Page is a Server Component: data is fetched on the server using `createServerClient` — no client-side loading state needed, faster initial paint
+- Error handling is an inline `Alert` (not toast) because there is no data to show and we are in a server component; toast requires a client component
+- Navigation logic (`useRouter`) lives in `CoursesGrid` (client component) so `CourseCard` stays a pure presentational component usable anywhere
+- Backend filters by JWT identity — calling `GET /api/courses` as an authenticated teacher returns only that teacher's courses; no manual filter needed
+
+### Next
+- Build course detail page (`/courses/[id]`)
+- Build authenticated layout (Sidebar + Topbar)
+- Move `Role` to `src/utils/roles.ts`
+
+---
+
+## 2026-04-22 — Layout + Sidebar + Routing skeleton
+
+### Done
+- Created placeholder pages: `courses/[id]`, `courses/[id]/assignments/[assignmentId]`, `submissions/[id]`, `admin` — each returns a minimal `<div>` pending real implementation
+- Created `src/components/layout/navigation.ts` — role-keyed `NavItem[]` config (STUDENT/TEACHER/ADMIN); icon names are strings mapped in Sidebar
+- Created `src/components/layout/Sidebar.tsx` — permanent MUI `Drawer` (240 px); active link highlighted via `usePathname`; icon map avoids dynamic imports; user email in footer
+- Created `src/components/layout/Topbar.tsx` — MUI `AppBar`; page title derived from pathname; role `Chip` (blue/green/red); logout calls custom `/api/auth/logout` route
+- Created `src/components/layout/MainLayout.tsx` — flex-row composition of Sidebar + Topbar + scrollable content; `'use client'` so server-component children are passed via props (Next.js composition pattern)
+- Updated `src/app/(protected)/layout.tsx` — server-side session guard passes `primaryRole`, `userName`, `userEmail` to `MainLayout`
+- Created `src/components/common/PageHeader.tsx` — title + optional subtitle + optional action button
+- Created `src/components/common/LoadingSkeleton.tsx` — configurable row count of `Skeleton` rectangles
+- Created `src/components/common/EmptyState.tsx` — centred empty-state with title, description, and optional action
+- `pnpm tsc --noEmit` passes with zero errors
+
+### Decisions
+- **Icon map vs dynamic import**: a static `Record<string, React.ElementType>` for the three icons we use is simpler and type-safe; dynamic imports would require `next/dynamic` wrappers and add code-splitting complexity for three icons
+- **Custom logout route**: Topbar logout navigates to `/api/auth/logout` (not `signOut()`) — same as the standalone `LogoutButton`; `signOut()` clears the Next.js cookie but leaves the Keycloak SSO session alive, causing immediate auto-login
+- **Server → client composition**: `ProtectedLayout` is a server component (reads session, no JS shipped); `MainLayout` is `'use client'` so Sidebar/Topbar can use `usePathname`; children are passed as a prop so they remain server-rendered — standard Next.js App Router pattern
+- **`noUncheckedIndexedAccess` safety**: all array accesses in `getPageTitle` explicitly guard against `undefined` before use
+
+### Next
+- Build course detail page (`/courses/[id]`)
+- Build assignment detail + submission page
+- Add React Hook Form, Redux Toolkit, react-toastify, Vitest
