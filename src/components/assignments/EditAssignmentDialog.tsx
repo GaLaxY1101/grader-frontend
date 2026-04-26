@@ -12,7 +12,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
@@ -60,6 +60,16 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
       deadline: toDatetimeLocal(assignment.deadline),
     },
   });
+
+  // Keep form in sync when the assignment prop updates (e.g. after router.refresh())
+  useEffect(() => {
+    reset({
+      title: assignment.title ?? '',
+      description: assignment.description ?? '',
+      maxScore: assignment.maxScore ?? 100,
+      deadline: toDatetimeLocal(assignment.deadline),
+    });
+  }, [assignment, reset]);
 
   const handleClose = () => {
     reset();

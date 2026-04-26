@@ -6,7 +6,7 @@ import type { JWT } from 'next-auth/jwt';
 // ─── Types ────────────────────────────────────────────────
 
 interface DecodedToken {
-  app_roles?: string[];
+  realm_access?: { roles: string[] };
   exp?: number;
 }
 
@@ -99,7 +99,7 @@ export const auth: AuthOptions = {
           id_token: account.id_token ?? '',
           refresh_token: account.refresh_token ?? '',
           expires_at: account.expires_at ?? 0,
-          app_roles: Array.isArray(decoded.app_roles) ? decoded.app_roles : [],
+          app_roles: Array.isArray(decoded.realm_access?.roles) ? decoded.realm_access.roles : [],
         };
       }
 
