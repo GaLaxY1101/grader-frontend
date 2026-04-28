@@ -3,6 +3,7 @@
 import { apiClient } from '@/lib/api/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoadingButton } from '@mui/lab';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -13,16 +14,26 @@ import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
 import FormLabel from '@mui/material/FormLabel';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
+import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
+
+const testCaseSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  testType: z.enum(['IO', 'EXCEPTION']),
+  input: z.string().optional(),
+  expectedOutput: z.string().optional(),
+});
 
 const schema = z
   .object({
@@ -31,14 +42,15 @@ const schema = z
     maxScore: z.number().min(1, 'Min 1').max(1000, 'Max 1000'),
     deadline: z.string().optional(),
     taskType: z.enum(['NONE', 'CODE', 'FILE']),
-    language: z.string().optional(),
+    language: z.enum(['C', 'CPP']).optional(),
     ciConfigTemplate: z.string().optional(),
+    testCases: z.array(testCaseSchema).optional(),
     allowedExtensions: z.string().optional(),
     maxFileSize: z.number().optional(),
     allowedFileCount: z.number().min(1).optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.taskType === 'CODE' && !data.language?.trim()) {
+    if (data.taskType === 'CODE' && !data.language) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Language is required for code tasks',
@@ -75,10 +87,17 @@ export const CreateAssignmentDialog = ({
     defaultValues: {
       taskType: 'NONE',
       maxScore: 100,
+      testCases: [],
     },
   });
 
   const taskType = watch('taskType');
+  const testCases = watch('testCases');
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'testCases',
+  });
 
   const handleClose = () => {
     reset();
@@ -94,12 +113,19 @@ export const CreateAssignmentDialog = ({
           title: data.title,
           description: data.description || undefined,
           maxScore: data.maxScore,
-          deadline: data.deadline ? data.deadline.replace('T', 'T') : undefined,
+          deadline: data.deadline || undefined,
           programmingTask:
             data.taskType === 'CODE'
               ? {
-                  language: data.language!,
+                  language: data.language as 'C' | 'CPP',
                   ciConfigTemplate: data.ciConfigTemplate || undefined,
+                  testCases: data.testCases?.map((tc) => ({
+                    name: tc.name,
+                    testType: tc.testType as 'IO' | 'EXCEPTION',
+                    input: tc.input || undefined,
+                    expectedOutput:
+                      tc.testType === 'IO' ? tc.expectedOutput || undefined : undefined,
+                  })),
                 }
               : undefined,
           fileUploadTask:
@@ -207,24 +233,131 @@ export const CreateAssignmentDialog = ({
             {/* Code task fields */}
             {taskType === 'CODE' && (
               <>
-                <TextField
-                  {...register('language')}
-                  label="Language"
-                  placeholder="e.g. Java, Python, C++"
-                  required
-                  error={errors.language != null}
-                  helperText={errors.language?.message}
-                  fullWidth
+                <Controller
+                  name="language"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl fullWidth required error={errors.language != null}>
+                      <InputLabel>Language</InputLabel>
+                      <Select {...field} label="Language" value={field.value ?? ''}>
+                        <MenuItem value="C">C</MenuItem>
+                        <MenuItem value="CPP">C++</MenuItem>
+                      </Select>
+                      {errors.language && (
+                        <FormHelperText>{errors.language.message}</FormHelperText>
+                      )}
+                    </FormControl>
+                  )}
                 />
+
                 <TextField
                   {...register('ciConfigTemplate')}
-                  label="CI config template"
-                  placeholder=".gitlab-ci.yml content"
+                  label="CI config template (optional)"
+                  placeholder="Leave blank to use the default template"
                   multiline
-                  rows={5}
+                  rows={4}
                   inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
                   fullWidth
                 />
+
+                {/* Test cases */}
+                <Divider />
+
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <Typography variant="subtitle2">Test Cases</Typography>
+                  <Button
+                    size="small"
+                    onClick={() =>
+                      append({ name: '', testType: 'IO', input: '', expectedOutput: '' })
+                    }
+                  >
+                    + Add Test Case
+                  </Button>
+                </Box>
+
+                {fields.map((field, index) => (
+                  <Box
+                    key={field.id}
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      p: 2,
+                    }}
+                  >
+                    <Stack spacing={1.5}>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                        <TextField
+                          {...register(`testCases.${index}.name`)}
+                          label="Test name"
+                          size="small"
+                          required
+                          error={errors.testCases?.[index]?.name != null}
+                          helperText={errors.testCases?.[index]?.name?.message}
+                          sx={{ flex: 1 }}
+                        />
+                        <Button
+                          size="small"
+                          color="error"
+                          onClick={() => remove(index)}
+                          sx={{ minWidth: 32, px: 1, mt: 0.5 }}
+                        >
+                          ✕
+                        </Button>
+                      </Box>
+
+                      <FormControl>
+                        <FormLabel>
+                          <Typography variant="caption" color="text.secondary">
+                            Test type
+                          </Typography>
+                        </FormLabel>
+                        <Controller
+                          name={`testCases.${index}.testType`}
+                          control={control}
+                          render={({ field: typeField }) => (
+                            <RadioGroup row {...typeField}>
+                              <FormControlLabel
+                                value="IO"
+                                control={<Radio size="small" />}
+                                label="IO (input / output)"
+                              />
+                              <FormControlLabel
+                                value="EXCEPTION"
+                                control={<Radio size="small" />}
+                                label="Exception (non-zero exit)"
+                              />
+                            </RadioGroup>
+                          )}
+                        />
+                      </FormControl>
+
+                      <TextField
+                        {...register(`testCases.${index}.input`)}
+                        label="Input"
+                        multiline
+                        rows={2}
+                        size="small"
+                        inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
+                        fullWidth
+                      />
+
+                      {testCases?.[index]?.testType === 'IO' && (
+                        <TextField
+                          {...register(`testCases.${index}.expectedOutput`)}
+                          label="Expected output"
+                          multiline
+                          rows={2}
+                          size="small"
+                          inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
+                          fullWidth
+                        />
+                      )}
+                    </Stack>
+                  </Box>
+                ))}
               </>
             )}
 
@@ -257,7 +390,6 @@ export const CreateAssignmentDialog = ({
               </>
             )}
 
-            {/* Validation error for programming task */}
             {errors.root != null && <FormHelperText error>{errors.root.message}</FormHelperText>}
           </Stack>
         </DialogContent>

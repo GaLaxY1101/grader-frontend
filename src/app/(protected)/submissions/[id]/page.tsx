@@ -18,7 +18,7 @@ import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 
 interface StatusSnapshot {
@@ -32,6 +32,7 @@ const TERMINAL_STATUSES: SubmissionStatus[] = ['PASSED', 'FAILED', 'ERROR'];
 
 export default function SubmissionStatusPage({ params }: { params: { id: string } }) {
   const submissionId = Number(params.id);
+  const router = useRouter();
 
   const fetcher = useCallback(async (): Promise<StatusSnapshot> => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,14 +55,13 @@ export default function SubmissionStatusPage({ params }: { params: { id: string 
   return (
     <Box sx={{ p: 4 }}>
       <Button
-        component={Link}
-        href="/courses"
+        onClick={() => router.back()}
         startIcon={<ArrowBackIcon />}
         variant="text"
         color="inherit"
         sx={{ mb: 3 }}
       >
-        Back to courses
+        Back
       </Button>
 
       <Typography variant="h5" fontWeight={600} gutterBottom>
@@ -98,7 +98,7 @@ export default function SubmissionStatusPage({ params }: { params: { id: string 
             </Box>
           )}
 
-          {status?.pipelineOutput != null && (
+          {status?.pipelineOutput ? (
             <>
               <Divider sx={{ my: 2 }} />
               <Typography variant="subtitle2" fontWeight={600} gutterBottom>
@@ -123,15 +123,11 @@ export default function SubmissionStatusPage({ params }: { params: { id: string 
                 {status.pipelineOutput}
               </Box>
             </>
-          )}
-
-          {status != null &&
-            TERMINAL_STATUSES.includes(status.status) &&
-            status.pipelineOutput == null && (
-              <Typography variant="body2" color="text.secondary">
-                No pipeline output available.
-              </Typography>
-            )}
+          ) : status != null && TERMINAL_STATUSES.includes(status.status) ? (
+            <Typography variant="body2" color="text.secondary">
+              No pipeline output available.
+            </Typography>
+          ) : null}
         </CardContent>
       </Card>
     </Box>

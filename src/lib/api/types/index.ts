@@ -24,6 +24,9 @@ export interface paths {
     put: operations['updateAssignment'];
     delete: operations['deactivateAssignment'];
   };
+  '/api/webhooks/gitlab': {
+    post: operations['handleGitLabWebhook'];
+  };
   '/api/v1/users': {
     get: operations['listUsers'];
     post: operations['createUser'];
@@ -206,9 +209,33 @@ export interface components {
       allowedFileCount?: number;
     };
     ProgrammingTaskDetails: {
-      language: string;
-      gitlabProjectTemplate?: string;
+      /** @enum {string} */
+      language: 'C' | 'CPP';
       ciConfigTemplate?: string;
+      testCases?: components['schemas']['TestCaseDetails'][];
+    };
+    TestCaseDetails: {
+      name: string;
+      /** @enum {string} */
+      testType: 'IO' | 'EXCEPTION';
+      input?: string;
+      expectedOutput?: string;
+    };
+    GitLabWebhookPayload: {
+      object_kind?: string;
+      object_attributes?: components['schemas']['PipelineAttributes'];
+      project?: components['schemas']['Project'];
+    };
+    PipelineAttributes: {
+      /** Format: int32 */
+      id?: number;
+      status?: string;
+      ref?: string;
+    };
+    Project: {
+      /** Format: int32 */
+      id?: number;
+      name?: string;
     };
     CreateUserRequest: {
       /** Format: email */
@@ -563,6 +590,24 @@ export interface operations {
     parameters: {
       path: {
         id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: never;
+      };
+    };
+  };
+  handleGitLabWebhook: {
+    parameters: {
+      header: {
+        'X-Gitlab-Token': string;
+      };
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GitLabWebhookPayload'];
       };
     };
     responses: {
