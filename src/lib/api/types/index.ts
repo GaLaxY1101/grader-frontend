@@ -63,6 +63,12 @@ export interface paths {
     get: operations['listAssignments'];
     post: operations['createAssignment'];
   };
+  '/api/compile/validate': {
+    post: operations['validateCompilation'];
+  };
+  '/api/assignments/{assignmentId}/compile': {
+    post: operations['validateSubmissionCompilation'];
+  };
   '/api/assignments/{assignmentId}/submissions': {
     get: operations['listByAssignment'];
     post: operations['createSubmission'];
@@ -179,6 +185,7 @@ export interface components {
       maxScore: number;
       /** Format: date-time */
       deadline?: string;
+      programmingTask?: components['schemas']['ProgrammingTaskDetails'];
     };
     AssignmentResponse: {
       /** Format: int64 */
@@ -211,7 +218,11 @@ export interface components {
     ProgrammingTaskDetails: {
       /** @enum {string} */
       language: 'C' | 'CPP';
+      /** @enum {string} */
+      testMode?: 'IO' | 'UNIT_TEST';
       ciConfigTemplate?: string;
+      functionSignature?: string;
+      testFileContent?: string;
       testCases?: components['schemas']['TestCaseDetails'][];
     };
     TestCaseDetails: {
@@ -341,6 +352,14 @@ export interface components {
     };
     CreateSubmissionRequest: {
       codeContent?: string;
+    };
+    CompileRequest: {
+      solutionCode: string;
+      testFileContent?: string;
+    };
+    CompileResponse: {
+      success: boolean;
+      output?: string;
     };
     SubmissionResponse: {
       /** Format: int64 */
@@ -898,6 +917,41 @@ export interface operations {
       200: {
         content: {
           '*/*': components['schemas']['SubmissionResponse'];
+        };
+      };
+    };
+  };
+  validateCompilation: {
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CompileRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['CompileResponse'];
+        };
+      };
+    };
+  };
+  validateSubmissionCompilation: {
+    parameters: {
+      path: {
+        assignmentId: number;
+      };
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CompileRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['CompileResponse'];
         };
       };
     };

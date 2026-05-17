@@ -10,16 +10,31 @@ interface PageHeaderProps {
 
 export const PageHeader = ({ title, subtitle, action }: PageHeaderProps) => {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        mb: 3,
+        pb: 3,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
       <Box>
-        <Typography variant="h4">{title}</Typography>
+        <Typography
+          variant="h4"
+          sx={{ fontWeight: 700, letterSpacing: '-0.02em', color: 'text.primary' }}
+        >
+          {title}
+        </Typography>
         {subtitle != null && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
             {subtitle}
           </Typography>
         )}
       </Box>
-      {action != null && <Box>{action}</Box>}
+      {action != null && <Box sx={{ flexShrink: 0 }}>{action}</Box>}
     </Box>
   );
 };

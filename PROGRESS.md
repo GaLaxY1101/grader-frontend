@@ -392,3 +392,26 @@ const { data, error } = await client.GET('/api/courses');
 - Start BE → run `pnpm generate-api` → replace `as any` casts in submissions API with typed calls
 - Admin page: user and group management
 - Vitest setup for FE unit tests
+
+---
+
+## 2026-04-28 — UI overhaul (design polish)
+
+### Done
+- **Theme** (`src/styles/theme.ts`): Updated color palette (blue-600 primary, richer semantic colors), refined typography with tight letter-spacing, new shadow scale (10 levels), component overrides for Button, Card, Chip, Dialog, Alert, TableCell/Row, OutlinedInput, Tooltip, LinearProgress, custom scrollbar via CssBaseline
+- **Sidebar** (`src/components/layout/Sidebar.tsx`): Dark gradient sidebar (navy-to-midnight), logo icon with blue accent, left active-indicator bar, muted inactive icon/text colors, user avatar with initials (gradient fill), wider at 256px
+- **Topbar** (`src/components/layout/Topbar.tsx`): Glass-effect background with backdrop blur, avatar with gradient fill, icon-only logout button (tooltip), role badge outlined variant, vertical divider between sections
+- **CourseCard** (`src/components/courses/CourseCard.tsx`): Per-course deterministic accent color (6-color palette), 4px gradient top accent bar, softer badge styling (filled instead of outlined), footer meta split by divider
+- **AssignmentCard** (`src/components/assignments/AssignmentCard.tsx`): Overdue/urgent/upcoming badge system with colored pill, footer separated by divider, score badge uses indigo tint, type chips use semantic colors
+- **CourseInfoCard** (`src/components/courses/CourseInfoCard.tsx`): Uppercase labels with wider letter-spacing, teacher chip uses gradient avatar, status badge uses semantic colors
+- **EmptyState** (`src/components/common/EmptyState.tsx`): Added optional `icon` prop with square icon container, centered layout with proper gap
+- **PageHeader** (`src/components/common/PageHeader.tsx`): Added bottom border divider, tighter letter-spacing on title
+- **LoadingSkeleton** (`src/components/common/LoadingSkeleton.tsx`): Wave animation, configurable height, rounded corners
+- **Dashboard** (`src/app/(protected)/dashboard/page.tsx`): Welcome banner with gradient background and decorative circles, 4-stat overview grid with colored icon boxes, role-specific subtitle
+- **Course detail page**: Section headers have count subtitle + bottom divider instead of plain h5, student list uses gradient avatars and bottom border per row
+
+### Decisions
+- Dark sidebar contrasts strongly with the light content area, giving the layout visual depth without an overwhelming color scheme
+- Deterministic accent colors per course ID (id % 6) means cards look varied without random flicker on re-render
+- `backdrop-filter: blur(8px)` on Topbar gives a modern glass feel that stays readable
+- `pnpm tsc --noEmit` passes with zero errors after all changes

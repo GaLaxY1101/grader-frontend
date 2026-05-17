@@ -1,33 +1,59 @@
 'use client';
 
-// TODO: after `pnpm generate-api`, replace (apiClient as any) with the properly-typed client call.
-// The cast is temporary until the new submission endpoints are in the generated types.
-
+import { CompilationErrorDialog } from '@/components/common/CompilationErrorDialog';
 import { apiClient } from '@/lib/api/client';
+import { formatCpp } from '@/utils/formatCpp';
+import Editor from '@monaco-editor/react';
 import { LoadingButton } from '@mui/lab';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import TextField from '@mui/material/TextField';
+import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 
+// Maps backend language enum values to Monaco language IDs
+const MONACO_LANGUAGE: Record<string, string> = {
+  C: 'c',
+  CPP: 'cpp',
+  JAVA: 'java',
+  PYTHON: 'python',
+  JAVASCRIPT: 'javascript',
+  TYPESCRIPT: 'typescript',
+};
+
+function toMonacoLanguage(lang: string | null | undefined): string {
+  if (lang == null) return 'plaintext';
+  return MONACO_LANGUAGE[lang.toUpperCase()] ?? lang.toLowerCase();
+}
+
 interface SubmissionFormProps {
   assignmentId: number;
   language?: string | null;
   existingSubmissionId?: number | null;
+  testMode?: string | null;
+  functionSignature?: string | null;
+  lastAttemptCode?: string | null;
 }
 
 export const SubmissionForm = ({
   assignmentId,
   language,
   existingSubmissionId,
+  functionSignature,
+  lastAttemptCode,
 }: SubmissionFormProps) => {
   const router = useRouter();
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(lastAttemptCode ?? functionSignature ?? '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [compileError, setCompileError] = useState<string | null>(null);
+
+  const handleFormat = () => {
+    setCode((current) => formatCpp(current));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +63,25 @@ export const SubmissionForm = ({
     }
     setIsSubmitting(true);
     try {
+      // Validate compilation before submitting
+      const { data: compileResult, error: compileError } = await apiClient.POST(
+        '/api/assignments/{assignmentId}/compile',
+        {
+          params: { path: { assignmentId } },
+          body: { solutionCode: code },
+        },
+      );
+      if (compileError || !compileResult) {
+        toast.error('Failed to validate compilation');
+        setIsSubmitting(false);
+        return;
+      }
+      if (!compileResult.success) {
+        setCompileError(compileResult.output ?? 'Unknown error');
+        setIsSubmitting(false);
+        return;
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (apiClient as any).POST(
         '/api/assignments/{assignmentId}/submissions',
@@ -50,7 +95,7 @@ export const SubmissionForm = ({
         return;
       }
       toast.success('Submitted! Waiting for results…');
-      router.push(`/submissions/${(data as { id: number }).id}`);
+      router.push(`/attempts/${(data as { id: number }).id}`);
     } catch {
       toast.error('Submission failed. Please try again.');
     } finally {
@@ -59,54 +104,87 @@ export const SubmissionForm = ({
   };
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography variant="subtitle1" fontWeight={600}>
-          Submit your solution
-        </Typography>
-        {language != null && (
-          <Chip label={language} size="small" variant="outlined" color="primary" />
+    <>
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="subtitle1" fontWeight={600}>
+            Submit your solution
+          </Typography>
+          {language != null && (
+            <Chip label={language} size="small" variant="outlined" color="primary" />
+          )}
+        </Box>
+
+        {existingSubmissionId != null && (
+          <Alert severity="info" sx={{ mb: 1 }}>
+            You have a previous submission.{' '}
+            <a href={`/submissions/${existingSubmissionId}`} style={{ color: 'inherit' }}>
+              View it
+            </a>
+            . Submitting again will create a new attempt.
+          </Alert>
         )}
-      </Box>
 
-      {existingSubmissionId != null && (
-        <Alert severity="info" sx={{ mb: 1 }}>
-          You have a previous submission.{' '}
-          <a href={`/submissions/${existingSubmissionId}`} style={{ color: 'inherit' }}>
-            View it
-          </a>
-          . Submitting again will create a new attempt.
-        </Alert>
-      )}
-
-      <TextField
-        label="Source code"
-        multiline
-        minRows={12}
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        placeholder={
-          language != null ? `// Write your ${language} solution here` : '// Your solution'
-        }
-        inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
-        fullWidth
-        required
-      />
-
-      <Box>
-        <LoadingButton
-          type="submit"
-          variant="contained"
-          loading={isSubmitting}
-          disabled={!code.trim()}
+        <Box
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+            overflow: 'hidden',
+          }}
         >
-          Submit
-        </LoadingButton>
+          <Editor
+            height="400px"
+            language={toMonacoLanguage(language)}
+            value={code}
+            onChange={(value) => setCode(value ?? '')}
+            loading={
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: 400,
+                }}
+              >
+                <CircularProgress size={32} />
+              </Box>
+            }
+            options={{
+              fontSize: 13,
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              tabSize: 4,
+              wordWrap: 'on',
+              lineNumbersMinChars: 3,
+              padding: { top: 12, bottom: 12 },
+            }}
+          />
+        </Box>
+
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <LoadingButton
+            type="submit"
+            variant="contained"
+            loading={isSubmitting}
+            disabled={!code.trim()}
+          >
+            Submit
+          </LoadingButton>
+          <Button variant="outlined" size="small" onClick={handleFormat} disabled={isSubmitting}>
+            Format Code
+          </Button>
+        </Box>
       </Box>
-    </Box>
+      <CompilationErrorDialog
+        open={compileError != null}
+        output={compileError}
+        onClose={() => setCompileError(null)}
+      />
+    </>
   );
 };

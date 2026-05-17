@@ -1,8 +1,8 @@
 import { AssignmentCard } from '@/components/assignments/AssignmentCard';
-import { CreateAssignmentButton } from '@/components/assignments/CreateAssignmentButton';
 import { EmptyState } from '@/components/common/EmptyState';
 import { CourseInfoCard } from '@/components/courses/CourseInfoCard';
 import { EditCourseButton } from '@/components/courses/EditCourseButton';
+import { ManageStudentsButton } from '@/components/courses/ManageStudentsButton';
 import { getAssignmentsByCourse } from '@/lib/api/assignments';
 import { getCourseById, getCourseStudents } from '@/lib/api/courses';
 import { auth } from '@/lib/server/auth';
@@ -12,7 +12,6 @@ import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
@@ -77,12 +76,34 @@ export default async function CourseDetailPage({ params }: { params: { id: strin
         {/* Assignments section */}
         <Box>
           <Box
-            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+              pb: 2,
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+            }}
           >
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              Assignments
-            </Typography>
-            {canManage && <CreateAssignmentButton courseId={courseId} />}
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
+                Assignments
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {assignmentList.length} assignment{assignmentList.length !== 1 ? 's' : ''}
+              </Typography>
+            </Box>
+            {canManage && (
+              <Button
+                component={Link}
+                href={`/courses/${courseId}/assignments/new`}
+                variant="outlined"
+                size="small"
+              >
+                + Add
+              </Button>
+            )}
           </Box>
 
           {assignmentList.length === 0 ? (
@@ -91,7 +112,7 @@ export default async function CourseDetailPage({ params }: { params: { id: strin
               description="Assignments will appear here once added."
             />
           ) : (
-            <Stack spacing={2}>
+            <Stack spacing={1.5}>
               {assignmentList.map((assignment) => (
                 <AssignmentCard key={assignment.id} assignment={assignment} />
               ))}
@@ -102,16 +123,26 @@ export default async function CourseDetailPage({ params }: { params: { id: strin
         {/* Students section — TEACHER / ADMIN only */}
         {canManage && (
           <Box>
-            <Divider sx={{ mb: 3 }} />
             <Box
-              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 2,
+                pb: 2,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+              }}
             >
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                Students ({studentList.length})
-              </Typography>
-              <Button variant="outlined" size="small" disabled>
-                + Add
-              </Button>
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
+                  Students
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {studentList.length} enrolled
+                </Typography>
+              </Box>
+              <ManageStudentsButton courseId={courseId} enrolledStudents={studentList} />
             </Box>
 
             {studentList.length === 0 ? (
@@ -121,16 +152,34 @@ export default async function CourseDetailPage({ params }: { params: { id: strin
               />
             ) : (
               <List disablePadding>
-                {studentList.map((student) => (
-                  <ListItem key={student.studentId} disableGutters sx={{ py: 1 }}>
+                {studentList.map((student, idx) => (
+                  <ListItem
+                    key={student.studentId}
+                    disableGutters
+                    sx={{
+                      py: 1.25,
+                      borderBottom: idx < studentList.length - 1 ? '1px solid' : 'none',
+                      borderColor: 'divider',
+                    }}
+                  >
                     <ListItemAvatar>
-                      <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, fontSize: 14 }}>
+                      <Avatar
+                        sx={{
+                          background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
+                          width: 36,
+                          height: 36,
+                          fontSize: '0.8125rem',
+                          fontWeight: 700,
+                        }}
+                      >
                         {getInitials(student.firstName, student.lastName)}
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
                       primary={`${student.firstName ?? ''} ${student.lastName ?? ''}`.trim() || '—'}
                       secondary={student.email}
+                      primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9375rem' }}
+                      secondaryTypographyProps={{ fontSize: '0.8125rem' }}
                     />
                   </ListItem>
                 ))}

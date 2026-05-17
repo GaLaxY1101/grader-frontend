@@ -24,12 +24,17 @@ const InfoItem = ({ label, value }: InfoItemProps) => (
   <Box>
     <Typography
       variant="caption"
-      color="text.secondary"
-      sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
+      sx={{
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        fontWeight: 700,
+        color: 'text.secondary',
+        fontSize: '0.6875rem',
+      }}
     >
       {label}
     </Typography>
-    <Typography variant="body1" sx={{ mt: 0.25 }}>
+    <Typography variant="body1" fontWeight={500} sx={{ mt: 0.5, color: 'text.primary' }}>
       {value}
     </Typography>
   </Box>
@@ -40,37 +45,51 @@ export const CourseInfoCard = ({ course }: CourseInfoCardProps) => {
     course.academicYear != null ? `${course.academicYear}/${course.academicYear + 1}` : '—';
   const semesterLabel =
     course.semester === 1 ? 'Semester 1' : course.semester === 2 ? 'Semester 2' : '—';
-  const dateRange =
-    course.startDate != null || course.endDate != null
-      ? `${course.startDate ?? '?'} → ${course.endDate ?? '?'}`
-      : '—';
-
   return (
-    <Card variant="outlined" sx={{ borderRadius: 2 }}>
-      <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+    <Card sx={{ borderRadius: '12px', border: '1px solid', borderColor: 'divider' }}>
+      <CardContent sx={{ p: 3.5, '&:last-child': { pb: 3.5 } }}>
         {/* Course name + status */}
         <Box
           sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}
         >
-          <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              lineHeight: 1.2,
+              letterSpacing: '-0.02em',
+              color: 'text.primary',
+            }}
+          >
             {course.name ?? '—'}
           </Typography>
           <Chip
             label={course.isActive ? 'Active' : 'Inactive'}
-            color={course.isActive ? 'success' : 'default'}
             size="small"
-            sx={{ mt: 0.5, flexShrink: 0 }}
+            sx={{
+              mt: 0.5,
+              flexShrink: 0,
+              fontWeight: 700,
+              fontSize: '0.75rem',
+              borderRadius: '6px',
+              backgroundColor: course.isActive ? '#DCFCE7' : '#F1F5F9',
+              color: course.isActive ? '#15803D' : '#64748B',
+            }}
           />
         </Box>
 
         {/* Description */}
         {course.description != null && (
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 2.5 }}>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mb: 3, lineHeight: 1.6, fontSize: '0.9375rem' }}
+          >
             {course.description}
           </Typography>
         )}
 
-        <Divider sx={{ mb: 2.5 }} />
+        <Divider sx={{ mb: 3 }} />
 
         {/* Info grid */}
         <Grid container spacing={3}>
@@ -80,20 +99,24 @@ export const CourseInfoCard = ({ course }: CourseInfoCardProps) => {
           <Grid item xs={12} sm={6} md={3}>
             <InfoItem label="Semester" value={semesterLabel} />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <InfoItem label="Dates" value={dateRange} />
-          </Grid>
         </Grid>
 
         {/* Teachers */}
         {course.teachers != null && course.teachers.length > 0 && (
           <>
-            <Divider sx={{ my: 2.5 }} />
+            <Divider sx={{ my: 3 }} />
             <Box>
               <Typography
                 variant="caption"
-                color="text.secondary"
-                sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 1 }}
+                sx={{
+                  display: 'block',
+                  mb: 1.5,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  fontWeight: 700,
+                  color: 'text.secondary',
+                  fontSize: '0.6875rem',
+                }}
               >
                 Teachers
               </Typography>
@@ -108,10 +131,27 @@ export const CourseInfoCard = ({ course }: CourseInfoCardProps) => {
                   return (
                     <Tooltip key={teacher.teacherId} title={teacher.email ?? ''} placement="top">
                       <Chip
-                        avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{initials}</Avatar>}
+                        avatar={
+                          <Avatar
+                            sx={{
+                              background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
+                              color: '#fff !important',
+                              fontSize: '0.625rem',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {initials}
+                          </Avatar>
+                        }
                         label={name}
                         size="small"
-                        variant="outlined"
+                        sx={{
+                          borderRadius: '20px',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          backgroundColor: '#F8FAFC',
+                          fontWeight: 500,
+                        }}
                       />
                     </Tooltip>
                   );

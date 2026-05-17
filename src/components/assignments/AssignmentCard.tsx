@@ -1,4 +1,5 @@
 import type { components } from '@/lib/api/types/index';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ArticleIcon from '@mui/icons-material/Article';
 import CodeIcon from '@mui/icons-material/Code';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -15,33 +16,39 @@ interface AssignmentCardProps {
   assignment: AssignmentResponse;
 }
 
-function getDeadlineColor(
-  deadline: string | undefined,
-): 'error.main' | 'warning.main' | 'text.secondary' {
-  if (deadline == null) return 'text.secondary';
-  const deadlineDate = new Date(deadline);
-  const now = new Date();
-  const diffMs = deadlineDate.getTime() - now.getTime();
-  if (diffMs < 0) return 'error.main';
-  if (diffMs <= 3 * 24 * 60 * 60 * 1000) return 'warning.main';
-  return 'text.secondary';
+type DeadlineStatus = 'overdue' | 'urgent' | 'upcoming';
+
+function getDeadlineStatus(deadline: string | undefined): DeadlineStatus | null {
+  if (deadline == null) return null;
+  const diffMs = new Date(deadline).getTime() - Date.now();
+  if (diffMs < 0) return 'overdue';
+  if (diffMs <= 3 * 24 * 60 * 60 * 1000) return 'urgent';
+  return 'upcoming';
 }
 
 function formatDeadline(deadline: string | undefined): string {
   if (deadline == null) return 'No deadline';
-  return `Due ${new Date(deadline).toLocaleDateString('en-US', {
+  return new Date(deadline).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  })}`;
+  });
 }
 
+const deadlineStyles: Record<DeadlineStatus, { color: string; bg: string; label: string }> = {
+  overdue: { color: '#B91C1C', bg: '#FFF1F2', label: 'Overdue' },
+  urgent: { color: '#B45309', bg: '#FFFBEB', label: 'Due soon' },
+  upcoming: { color: '#0369A1', bg: '#F0F9FF', label: 'Upcoming' },
+};
+
 export const AssignmentCard = ({ assignment }: AssignmentCardProps) => {
-  const deadlineColor = getDeadlineColor(assignment.deadline);
+  const status = getDeadlineStatus(assignment.deadline);
   const deadlineLabel = formatDeadline(assignment.deadline);
 
   const isProgramming = assignment.programmingTask != null;
   const isFileUpload = assignment.fileUploadTask != null;
+
+  const style = status != null ? deadlineStyles[status] : null;
 
   return (
     <Box
@@ -50,12 +57,15 @@ export const AssignmentCard = ({ assignment }: AssignmentCardProps) => {
       sx={{ textDecoration: 'none', display: 'block' }}
     >
       <Card
-        variant="outlined"
         sx={{
-          transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+          borderRadius: '10px',
+          border: '1px solid',
+          borderColor: 'divider',
+          transition: 'box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease',
           '&:hover': {
-            boxShadow: 4,
+            boxShadow: '0px 8px 20px -4px rgba(15,23,42,0.12)',
             transform: 'translateY(-2px)',
+            borderColor: 'primary.light',
           },
         }}
       >
@@ -63,12 +73,12 @@ export const AssignmentCard = ({ assignment }: AssignmentCardProps) => {
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 1,
+            gap: 1.25,
             p: 2.5,
             '&:last-child': { pb: 2.5 },
           }}
         >
-          {/* Title + score badge */}
+          {/* Title row */}
           <Box
             sx={{
               display: 'flex',
@@ -77,18 +87,33 @@ export const AssignmentCard = ({ assignment }: AssignmentCardProps) => {
               gap: 1,
             }}
           >
-            <Typography variant="h6" component="h3" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+            <Typography
+              variant="h6"
+              component="h3"
+              sx={{
+                fontWeight: 700,
+                lineHeight: 1.3,
+                fontSize: '0.9375rem',
+                color: 'text.primary',
+              }}
+            >
               {assignment.title ?? '—'}
             </Typography>
             <Chip
               label={`${assignment.maxScore ?? 0} pts`}
               size="small"
-              color="primary"
-              sx={{ flexShrink: 0 }}
+              sx={{
+                flexShrink: 0,
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                backgroundColor: '#EEF2FF',
+                color: '#4338CA',
+                borderRadius: '6px',
+              }}
             />
           </Box>
 
-          {/* Description — truncated to 2 lines */}
+          {/* Description */}
           {assignment.description != null && (
             <Typography
               variant="body2"
@@ -98,41 +123,109 @@ export const AssignmentCard = ({ assignment }: AssignmentCardProps) => {
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden',
+                lineHeight: 1.55,
               }}
             >
               {assignment.description}
             </Typography>
           )}
 
-          {/* Deadline + type badge */}
+          {/* Footer: deadline + type */}
           <Box
-            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mt: 0.5,
+              pt: 1.25,
+              borderTop: '1px solid',
+              borderColor: 'divider',
+            }}
           >
-            <Typography variant="body2" sx={{ color: deadlineColor }}>
-              {deadlineLabel}
-            </Typography>
+            {/* Deadline */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <AccessTimeIcon
+                sx={{
+                  fontSize: 14,
+                  color: style?.color ?? 'text.secondary',
+                }}
+              />
+              {style != null ? (
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 600,
+                      color: style.color,
+                      backgroundColor: style.bg,
+                      px: 0.75,
+                      py: 0.25,
+                      borderRadius: '4px',
+                      fontSize: '0.7rem',
+                    }}
+                  >
+                    {style.label}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {deadlineLabel}
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography variant="caption" color="text.secondary">
+                  {deadlineLabel}
+                </Typography>
+              )}
+            </Box>
+
+            {/* Task type chip */}
             {isProgramming ? (
               <Chip
                 label="Code"
-                icon={<CodeIcon fontSize="small" />}
+                icon={<CodeIcon sx={{ fontSize: '14px !important' }} />}
                 size="small"
-                variant="outlined"
-                color="primary"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.7rem',
+                  backgroundColor: '#EEF2FF',
+                  color: '#4338CA',
+                  borderRadius: '5px',
+                  '& .MuiChip-icon': { color: '#4338CA' },
+                }}
               />
             ) : isFileUpload ? (
               <Chip
                 label="File"
-                icon={<UploadFileIcon fontSize="small" />}
+                icon={<UploadFileIcon sx={{ fontSize: '14px !important' }} />}
                 size="small"
-                variant="outlined"
-                color="success"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.7rem',
+                  backgroundColor: '#F0FDF4',
+                  color: '#15803D',
+                  borderRadius: '5px',
+                  '& .MuiChip-icon': { color: '#15803D' },
+                }}
               />
             ) : (
               <Chip
                 label="Text"
-                icon={<ArticleIcon fontSize="small" />}
+                icon={<ArticleIcon sx={{ fontSize: '14px !important' }} />}
                 size="small"
-                variant="outlined"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.7rem',
+                  backgroundColor: '#F8FAFC',
+                  color: '#475569',
+                  borderRadius: '5px',
+                  '& .MuiChip-icon': { color: '#475569' },
+                }}
               />
             )}
           </Box>

@@ -20,7 +20,9 @@ interface Submission {
   studentEmail: string;
   status: SubmissionStatus;
   score: number | null;
-  submittedAt: string;
+  bestScore: number | null;
+  attemptCount: number;
+  updatedAt: string;
 }
 
 interface SubmissionListProps {
@@ -54,12 +56,12 @@ export const SubmissionList = ({ submissions }: SubmissionListProps) => {
             </ListItemAvatar>
             <ListItemText
               primary={sub.studentEmail}
-              secondary={new Date(sub.submittedAt).toLocaleString()}
+              secondary={`${sub.attemptCount} attempt${sub.attemptCount === 1 ? '' : 's'} · ${new Date(sub.updatedAt).toLocaleString()}`}
             />
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
               <SubmissionStatusBadge status={sub.status} />
-              {sub.score != null && (
-                <Chip label={`${sub.score} pts`} size="small" variant="outlined" />
+              {sub.bestScore != null && (
+                <Chip label={`Best: ${sub.bestScore} pts`} size="small" variant="outlined" />
               )}
             </Box>
           </ListItem>

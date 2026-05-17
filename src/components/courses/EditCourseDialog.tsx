@@ -29,8 +29,6 @@ const schema = z.object({
   description: z.string().optional(),
   academicYear: z.number().min(2020, 'Min year is 2020').max(2040, 'Max year is 2040'),
   semester: z.number().min(1).max(2),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
 });
 
 type EditCourseFormData = z.infer<typeof schema>;
@@ -58,8 +56,6 @@ export const EditCourseDialog = ({ course, open, onClose }: EditCourseDialogProp
       description: course.description ?? '',
       academicYear: course.academicYear ?? new Date().getFullYear(),
       semester: course.semester ?? 1,
-      startDate: course.startDate ?? '',
-      endDate: course.endDate ?? '',
     },
   });
 
@@ -79,8 +75,6 @@ export const EditCourseDialog = ({ course, open, onClose }: EditCourseDialogProp
           description: data.description || undefined,
           academicYear: data.academicYear,
           semester: data.semester,
-          startDate: data.startDate || undefined,
-          endDate: data.endDate || undefined,
         },
       });
 
@@ -149,22 +143,6 @@ export const EditCourseDialog = ({ course, open, onClose }: EditCourseDialogProp
                 <FormHelperText>{errors.semester.message}</FormHelperText>
               )}
             </FormControl>
-
-            <TextField
-              {...register('startDate')}
-              label="Start date"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              fullWidth
-            />
-
-            <TextField
-              {...register('endDate')}
-              label="End date"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              fullWidth
-            />
           </Stack>
         </DialogContent>
 

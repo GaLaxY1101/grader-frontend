@@ -4,7 +4,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
 import { type Role } from '@/utils/roles';
 import Box from '@mui/material/Box';
-import React from 'react';
+import React, { useState } from 'react';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -14,10 +14,17 @@ interface MainLayoutProps {
 }
 
 export const MainLayout = ({ children, userName, userEmail, role }: MainLayoutProps) => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       {/* Left: fixed sidebar */}
-      <Sidebar role={role} userEmail={userEmail} />
+      <Sidebar
+        role={role}
+        userEmail={userEmail}
+        open={sidebarOpen}
+        onToggle={() => setSidebarOpen((v) => !v)}
+      />
 
       {/* Right: topbar + scrollable content */}
       <Box
@@ -29,7 +36,12 @@ export const MainLayout = ({ children, userName, userEmail, role }: MainLayoutPr
           minWidth: 0,
         }}
       >
-        <Topbar userName={userName} role={role} />
+        <Topbar
+          userName={userName}
+          role={role}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen((v) => !v)}
+        />
 
         <Box
           sx={{

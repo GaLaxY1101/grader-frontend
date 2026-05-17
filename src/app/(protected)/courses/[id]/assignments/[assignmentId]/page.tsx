@@ -4,7 +4,7 @@ import { SubmissionForm } from '@/components/submissions/SubmissionForm';
 import { SubmissionList } from '@/components/submissions/SubmissionList';
 import { SubmissionStatusBadge } from '@/components/submissions/SubmissionStatusBadge';
 import { getAssignmentById } from '@/lib/api/assignments';
-import { getMyLatestSubmission, listSubmissionsByAssignment } from '@/lib/api/submissions';
+import { getMySubmission, listAttempts, listSubmissionsByAssignment } from '@/lib/api/submissions';
 import { auth } from '@/lib/server/auth';
 import { Role } from '@/utils/roles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -70,9 +70,19 @@ export default async function AssignmentDetailPage({
 
   // Load role-specific data in parallel
   const [mySubmission, allSubmissions] = await Promise.all([
-    isStudent ? getMyLatestSubmission(assignmentId) : Promise.resolve(null),
+    isStudent ? getMySubmission(assignmentId) : Promise.resolve(null),
     canManage ? listSubmissionsByAssignment(assignmentId).catch(() => []) : Promise.resolve([]),
   ]);
+
+  // Fetch latest attempt code for pre-filling the editor
+  let latestAttemptCode: string | null = null;
+  if (mySubmission?.id != null) {
+    const attempts = await listAttempts(mySubmission.id).catch(() => []);
+    const latest = attempts[attempts.length - 1];
+    if (latest != null) {
+      latestAttemptCode = latest.codeContent ?? null;
+    }
+  }
 
   const deadline = formatDeadline(assignment?.deadline);
   const programmingTask = assignment?.programmingTask;
@@ -175,23 +185,28 @@ export default async function AssignmentDetailPage({
             {mySubmission != null && (
               <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" fontWeight={600} gutterBottom>
-                  Latest submission
+                  My submission
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <SubmissionStatusBadge status={mySubmission.status} />
-                  {mySubmission.score != null && (
+                  {mySubmission.bestScore != null && (
                     <Chip
-                      label={`${mySubmission.score} / ${assignment?.maxScore ?? '?'} pts`}
+                      label={`Best: ${mySubmission.bestScore} / ${assignment?.maxScore ?? '?'} pts`}
                       size="small"
                     />
                   )}
+                  <Chip
+                    label={`${mySubmission.attemptCount} attempt${mySubmission.attemptCount === 1 ? '' : 's'}`}
+                    size="small"
+                    variant="outlined"
+                  />
                   <Button
                     component={Link}
                     href={`/submissions/${mySubmission.id}`}
                     size="small"
                     variant="text"
                   >
-                    View details
+                    View attempts
                   </Button>
                 </Box>
               </Box>
@@ -206,6 +221,9 @@ export default async function AssignmentDetailPage({
                 assignmentId={assignmentId}
                 language={programmingTask?.language}
                 existingSubmissionId={mySubmission?.id}
+                testMode={programmingTask?.testMode}
+                functionSignature={programmingTask?.functionSignature}
+                lastAttemptCode={latestAttemptCode}
               />
             )}
           </Box>

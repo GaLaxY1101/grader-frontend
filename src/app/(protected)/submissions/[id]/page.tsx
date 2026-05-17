@@ -1,61 +1,46 @@
-'use client';
-
-// TODO: after `pnpm generate-api`, replace (apiClient as any) with the properly-typed client call.
-
-import {
-  SubmissionStatusBadge,
-  type SubmissionStatus,
-} from '@/components/submissions/SubmissionStatusBadge';
-import { usePolling } from '@/hooks/usePolling';
-import { apiClient } from '@/lib/api/client';
+import { SubmissionStatusBadge } from '@/components/submissions/SubmissionStatusBadge';
+import { getSubmissionById, listAttempts } from '@/lib/api/submissions';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Alert from '@mui/material/Alert';
+import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
-import { useRouter } from 'next/navigation';
-import { useCallback } from 'react';
+import Link from 'next/link';
 
-interface StatusSnapshot {
-  id: number;
-  status: SubmissionStatus;
-  score: number | null;
-  pipelineOutput: string | null;
-}
-
-const TERMINAL_STATUSES: SubmissionStatus[] = ['PASSED', 'FAILED', 'ERROR'];
-
-export default function SubmissionStatusPage({ params }: { params: { id: string } }) {
+export default async function SubmissionDetailPage({ params }: { params: { id: string } }) {
   const submissionId = Number(params.id);
-  const router = useRouter();
 
-  const fetcher = useCallback(async (): Promise<StatusSnapshot> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (apiClient as any).GET('/api/submissions/{id}/status', {
-      params: { path: { id: submissionId } },
-    });
-    if (error || data == null) throw new Error('Failed to fetch submission status');
-    return data as StatusSnapshot;
-  }, [submissionId]);
+  let submission: Awaited<ReturnType<typeof getSubmissionById>>;
+  let attempts: Awaited<ReturnType<typeof listAttempts>>;
 
-  const {
-    data: status,
-    isLoading,
-    error,
-  } = usePolling(fetcher, {
-    intervalMs: 3000,
-    stopWhen: (d) => TERMINAL_STATUSES.includes(d.status),
-  });
+  try {
+    [submission, attempts] = await Promise.all([
+      getSubmissionById(submissionId),
+      listAttempts(submissionId),
+    ]);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to load submission';
+    return (
+      <Box sx={{ p: 4 }}>
+        <Alert severity="error">{message}</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 4 }}>
       <Button
-        onClick={() => router.back()}
+        component={Link}
+        href={`/courses`}
         startIcon={<ArrowBackIcon />}
         variant="text"
         color="inherit"
@@ -65,71 +50,86 @@ export default function SubmissionStatusPage({ params }: { params: { id: string 
       </Button>
 
       <Typography variant="h5" fontWeight={600} gutterBottom>
-        Submission #{submissionId}
+        Submission
       </Typography>
 
-      {error != null && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-
-      <Card variant="outlined">
+      {/* Summary card */}
+      <Card variant="outlined" sx={{ mb: 4 }}>
         <CardContent sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             <Typography variant="subtitle1" fontWeight={600}>
               Status
             </Typography>
-            {isLoading && status == null ? (
-              <CircularProgress size={20} />
-            ) : status != null ? (
-              <>
-                <SubmissionStatusBadge status={status.status} />
-                {(status.status === 'PENDING' || status.status === 'RUNNING') && (
-                  <CircularProgress size={16} thickness={5} />
-                )}
-              </>
-            ) : null}
+            <SubmissionStatusBadge status={submission.status} />
           </Box>
 
-          {status?.score != null && (
-            <Box sx={{ mb: 2 }}>
-              <Chip label={`Score: ${status.score} pts`} color="primary" variant="outlined" />
-            </Box>
-          )}
-
-          {status?.pipelineOutput ? (
-            <>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                Pipeline output
-              </Typography>
-              <Box
-                component="pre"
-                sx={{
-                  bgcolor: 'grey.900',
-                  color: 'grey.100',
-                  p: 2,
-                  borderRadius: 1,
-                  overflowX: 'auto',
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                  maxHeight: 400,
-                  overflowY: 'auto',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {status.pipelineOutput}
-              </Box>
-            </>
-          ) : status != null && TERMINAL_STATUSES.includes(status.status) ? (
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+            {submission.score != null && (
+              <Chip label={`Latest: ${submission.score} pts`} size="small" variant="outlined" />
+            )}
+            {submission.bestScore != null && (
+              <Chip
+                label={`Best: ${submission.bestScore} pts`}
+                size="small"
+                color="success"
+                variant="outlined"
+              />
+            )}
+            <Chip
+              label={`${submission.attemptCount} attempt${submission.attemptCount === 1 ? '' : 's'}`}
+              size="small"
+              variant="outlined"
+            />
             <Typography variant="body2" color="text.secondary">
-              No pipeline output available.
+              {submission.studentEmail}
             </Typography>
-          ) : null}
+          </Box>
         </CardContent>
       </Card>
+
+      {/* Attempt history */}
+      <Typography variant="h6" fontWeight={600} gutterBottom>
+        Attempts
+      </Typography>
+
+      {attempts.length === 0 ? (
+        <Typography variant="body2" color="text.secondary">
+          No attempts yet.
+        </Typography>
+      ) : (
+        <Card variant="outlined">
+          <List disablePadding>
+            {attempts.map((attempt, index) => (
+              <Box key={attempt.id}>
+                <ListItem
+                  disableGutters
+                  sx={{ px: 3, py: 1.5, display: 'flex', gap: 2, alignItems: 'center' }}
+                  component={Link}
+                  href={`/attempts/${attempt.id}`}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <ListItemAvatar>
+                    <Avatar sx={{ bgcolor: 'primary.light', width: 36, height: 36, fontSize: 13 }}>
+                      #{attempt.attemptNumber}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={`Attempt #${attempt.attemptNumber}`}
+                    secondary={new Date(attempt.submittedAt).toLocaleString()}
+                  />
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
+                    <SubmissionStatusBadge status={attempt.status} />
+                    {attempt.score != null && (
+                      <Chip label={`${attempt.score} pts`} size="small" variant="outlined" />
+                    )}
+                  </Box>
+                </ListItem>
+                {index < attempts.length - 1 && <Divider />}
+              </Box>
+            ))}
+          </List>
+        </Card>
+      )}
     </Box>
   );
 }
