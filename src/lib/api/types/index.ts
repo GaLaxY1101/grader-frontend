@@ -66,12 +66,12 @@ export interface paths {
   '/api/compile/validate': {
     post: operations['validateCompilation'];
   };
-  '/api/assignments/{assignmentId}/compile': {
-    post: operations['validateSubmissionCompilation'];
-  };
   '/api/assignments/{assignmentId}/submissions': {
     get: operations['listByAssignment'];
     post: operations['createSubmission'];
+  };
+  '/api/assignments/{assignmentId}/compile': {
+    post: operations['validateSubmissionCompilation'];
   };
   '/api/v1/teachers/{id}': {
     get: operations['getTeacher'];
@@ -80,6 +80,9 @@ export interface paths {
   '/api/v1/students/{id}': {
     get: operations['getStudent'];
     delete: operations['deleteStudent'];
+  };
+  '/api/submissions/{submissionId}/attempts': {
+    get: operations['listAttempts'];
   };
   '/api/submissions/{id}': {
     get: operations['getSubmission'];
@@ -96,8 +99,11 @@ export interface paths {
   '/api/courses/{id}/students': {
     get: operations['listStudents_2'];
   };
+  '/api/attempts/{attemptId}/status': {
+    get: operations['getAttemptStatus'];
+  };
   '/api/assignments/{assignmentId}/submissions/my': {
-    get: operations['getMyLatest'];
+    get: operations['getMySubmission'];
   };
 }
 
@@ -156,10 +162,6 @@ export interface components {
       academicYear: number;
       /** Format: int32 */
       semester: number;
-      /** Format: date */
-      startDate?: string;
-      /** Format: date */
-      endDate?: string;
     };
     CourseResponse: {
       /** Format: int64 */
@@ -170,13 +172,26 @@ export interface components {
       academicYear?: number;
       /** Format: int32 */
       semester?: number;
-      /** Format: date */
-      startDate?: string;
-      /** Format: date */
-      endDate?: string;
       isActive?: boolean;
       /** Format: date-time */
       createdAt?: string;
+    };
+    ProgrammingTaskDetails: {
+      /** @enum {string} */
+      language: 'C' | 'CPP';
+      /** @enum {string} */
+      testMode?: 'IO' | 'UNIT_TEST';
+      ciConfigTemplate?: string;
+      functionSignature?: string;
+      testFileContent?: string;
+      testCases?: components['schemas']['TestCaseDetails'][];
+    };
+    TestCaseDetails: {
+      name: string;
+      /** @enum {string} */
+      testType: 'IO' | 'EXCEPTION';
+      input?: string;
+      expectedOutput?: string;
     };
     UpdateAssignmentRequest: {
       title: string;
@@ -214,23 +229,6 @@ export interface components {
       maxFileSize?: number;
       /** Format: int32 */
       allowedFileCount?: number;
-    };
-    ProgrammingTaskDetails: {
-      /** @enum {string} */
-      language: 'C' | 'CPP';
-      /** @enum {string} */
-      testMode?: 'IO' | 'UNIT_TEST';
-      ciConfigTemplate?: string;
-      functionSignature?: string;
-      testFileContent?: string;
-      testCases?: components['schemas']['TestCaseDetails'][];
-    };
-    TestCaseDetails: {
-      name: string;
-      /** @enum {string} */
-      testType: 'IO' | 'EXCEPTION';
-      input?: string;
-      expectedOutput?: string;
     };
     GitLabWebhookPayload: {
       object_kind?: string;
@@ -317,10 +315,6 @@ export interface components {
       academicYear: number;
       /** Format: int32 */
       semester: number;
-      /** Format: date */
-      startDate?: string;
-      /** Format: date */
-      endDate?: string;
     };
     CourseTeacherResponse: {
       /** Format: int64 */
@@ -350,25 +344,24 @@ export interface components {
       programmingTask?: components['schemas']['ProgrammingTaskDetails'];
       fileUploadTask?: components['schemas']['FileUploadTaskDetails'];
     };
-    CreateSubmissionRequest: {
-      codeContent?: string;
-    };
     CompileRequest: {
       solutionCode: string;
       testFileContent?: string;
     };
     CompileResponse: {
-      success: boolean;
+      success?: boolean;
       output?: string;
     };
-    SubmissionResponse: {
+    CreateSubmissionRequest: {
+      codeContent?: string;
+    };
+    AttemptResponse: {
       /** Format: int64 */
       id?: number;
       /** Format: int64 */
-      assignmentId?: number;
-      /** Format: int64 */
-      studentId?: number;
-      studentEmail?: string;
+      submissionId?: number;
+      /** Format: int32 */
+      attemptNumber?: number;
       /** @enum {string} */
       status?: 'PENDING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR';
       /** Format: int32 */
@@ -384,6 +377,29 @@ export interface components {
       /** Format: date-time */
       updatedAt?: string;
     };
+    SubmissionResponse: {
+      /** Format: int64 */
+      id?: number;
+      /** Format: int64 */
+      assignmentId?: number;
+      /** Format: int64 */
+      studentId?: number;
+      studentEmail?: string;
+      /** @enum {string} */
+      status?: 'PENDING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR';
+      /** Format: int32 */
+      score?: number;
+      /** Format: int32 */
+      bestScore?: number;
+      /** Format: int32 */
+      attemptCount?: number;
+      /** Format: int64 */
+      latestAttemptId?: number;
+      /** Format: date-time */
+      createdAt?: string;
+      /** Format: date-time */
+      updatedAt?: string;
+    };
     SubmissionStatusResponse: {
       /** Format: int64 */
       id?: number;
@@ -391,7 +407,10 @@ export interface components {
       status?: 'PENDING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR';
       /** Format: int32 */
       score?: number;
-      pipelineOutput?: string;
+      /** Format: int32 */
+      bestScore?: number;
+      /** Format: int64 */
+      latestAttemptId?: number;
     };
     CourseDetailResponse: {
       /** Format: int64 */
@@ -402,16 +421,23 @@ export interface components {
       academicYear?: number;
       /** Format: int32 */
       semester?: number;
-      /** Format: date */
-      startDate?: string;
-      /** Format: date */
-      endDate?: string;
       isActive?: boolean;
       /** Format: date-time */
       createdAt?: string;
       teachers?: components['schemas']['CourseTeacherResponse'][];
       students?: components['schemas']['EnrolledStudentResponse'][];
       assignments?: components['schemas']['AssignmentResponse'][];
+    };
+    AttemptStatusResponse: {
+      /** Format: int64 */
+      attemptId?: number;
+      /** Format: int32 */
+      attemptNumber?: number;
+      /** @enum {string} */
+      status?: 'PENDING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR';
+      /** Format: int32 */
+      score?: number;
+      pipelineOutput?: string;
     };
   };
   responses: never;
@@ -886,6 +912,21 @@ export interface operations {
       };
     };
   };
+  validateCompilation: {
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CompileRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['CompileResponse'];
+        };
+      };
+    };
+  };
   listByAssignment: {
     parameters: {
       path: {
@@ -916,22 +957,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          '*/*': components['schemas']['SubmissionResponse'];
-        };
-      };
-    };
-  };
-  validateCompilation: {
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CompileRequest'];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          '*/*': components['schemas']['CompileResponse'];
+          '*/*': components['schemas']['AttemptResponse'];
         };
       };
     };
@@ -1012,6 +1038,21 @@ export interface operations {
       };
     };
   };
+  listAttempts: {
+    parameters: {
+      path: {
+        submissionId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['AttemptResponse'][];
+        };
+      };
+    };
+  };
   getSubmission: {
     parameters: {
       path: {
@@ -1087,7 +1128,22 @@ export interface operations {
       };
     };
   };
-  getMyLatest: {
+  getAttemptStatus: {
+    parameters: {
+      path: {
+        attemptId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['AttemptStatusResponse'];
+        };
+      };
+    };
+  };
+  getMySubmission: {
     parameters: {
       path: {
         assignmentId: number;

@@ -20,7 +20,6 @@ import { z } from 'zod';
 
 const schema = z.object({
   code: z.string().min(1, 'Code is required'),
-  name: z.string().min(1, 'Name is required'),
   faculty: z.string().optional(),
   speciality: z.string().optional(),
   yearOfCreation: z.number().min(2000, 'Year must be 2000 or later').max(2100),
@@ -58,7 +57,6 @@ export const CreateGroupDialog = ({ open, onClose }: CreateGroupDialogProps) => 
       const { error } = await apiClient.POST('/api/groups', {
         body: {
           code: data.code,
-          name: data.name,
           faculty: data.faculty || undefined,
           speciality: data.speciality || undefined,
           yearOfCreation: data.yearOfCreation,
@@ -104,14 +102,6 @@ export const CreateGroupDialog = ({ open, onClose }: CreateGroupDialogProps) => 
                 fullWidth
               />
             </Stack>
-            <TextField
-              {...register('name')}
-              label="Name"
-              required
-              error={errors.name != null}
-              helperText={errors.name?.message}
-              fullWidth
-            />
             <TextField
               {...register('faculty')}
               label="Faculty"

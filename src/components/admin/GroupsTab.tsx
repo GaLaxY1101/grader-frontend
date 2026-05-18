@@ -52,7 +52,6 @@ export const GroupsTab = ({ groups }: GroupsTabProps) => {
             <TableHead>
               <TableRow>
                 <TableCell>Code</TableCell>
-                <TableCell>Name</TableCell>
                 <TableCell>Faculty</TableCell>
                 <TableCell>Speciality</TableCell>
                 <TableCell>Year</TableCell>
@@ -65,7 +64,6 @@ export const GroupsTab = ({ groups }: GroupsTabProps) => {
               {groups.map((group, index) => (
                 <TableRow key={group.id ?? `group-${index}`} hover>
                   <TableCell>{group.code ?? '—'}</TableCell>
-                  <TableCell>{group.name ?? '—'}</TableCell>
                   <TableCell>{group.faculty ?? '—'}</TableCell>
                   <TableCell>{group.speciality ?? '—'}</TableCell>
                   <TableCell>{group.yearOfCreation ?? '—'}</TableCell>

@@ -58,8 +58,7 @@ export const DeleteGroupConfirmDialog = ({
       <DialogTitle>Delete group?</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Group <strong>{group?.name ?? ''}</strong>
-          {group?.code ? ` (${group.code})` : ''} will be deleted. This action cannot be undone.
+          Group <strong>{group?.code ?? ''}</strong> will be deleted. This action cannot be undone.
         </DialogContentText>
       </DialogContent>
       <DialogActions>
