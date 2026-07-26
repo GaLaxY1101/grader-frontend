@@ -1,5 +1,4 @@
 import type { components } from '@/lib/api/types/index';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import SchoolIcon from '@mui/icons-material/School';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -153,15 +152,6 @@ export const CourseCard = ({ course }: CourseCardProps) => {
                 {yearLabel} · {semesterLabel}
               </Typography>
             </Box>
-
-            {(course.startDate != null || course.endDate != null) && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                <CalendarTodayIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
-                <Typography variant="body2" color="text.secondary" fontSize="0.8125rem">
-                  {course.startDate ?? '?'} → {course.endDate ?? '?'}
-                </Typography>
-              </Box>
-            )}
           </Box>
         </CardContent>
       </Card>

@@ -4,6 +4,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import type { components } from '@/lib/api/types/index';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import PeopleIcon from '@mui/icons-material/People';
 import {
   Box,
   Button,
@@ -23,6 +24,7 @@ import { useState } from 'react';
 import { CreateGroupDialog } from './CreateGroupDialog';
 import { DeleteGroupConfirmDialog } from './DeleteGroupConfirmDialog';
 import { EditGroupDialog } from './EditGroupDialog';
+import { ManageGroupStudentsDialog } from './ManageGroupStudentsDialog';
 
 type GroupResponse = components['schemas']['GroupResponse'];
 
@@ -34,6 +36,7 @@ export const GroupsTab = ({ groups }: GroupsTabProps) => {
   const [createOpen, setCreateOpen] = useState(false);
   const [editGroup, setEditGroup] = useState<GroupResponse | null>(null);
   const [deleteGroup, setDeleteGroup] = useState<GroupResponse | null>(null);
+  const [manageGroup, setManageGroup] = useState<GroupResponse | null>(null);
 
   return (
     <Box>
@@ -78,6 +81,15 @@ export const GroupsTab = ({ groups }: GroupsTabProps) => {
                     {group.createdAt ? new Date(group.createdAt).toLocaleDateString() : '—'}
                   </TableCell>
                   <TableCell align="right">
+                    <Tooltip title="Manage Students">
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => setManageGroup(group)}
+                      >
+                        <PeopleIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title="Edit">
                       <IconButton size="small" onClick={() => setEditGroup(group)}>
                         <EditIcon fontSize="small" />
@@ -106,6 +118,11 @@ export const GroupsTab = ({ groups }: GroupsTabProps) => {
         group={deleteGroup}
         open={deleteGroup != null}
         onClose={() => setDeleteGroup(null)}
+      />
+      <ManageGroupStudentsDialog
+        group={manageGroup}
+        open={manageGroup != null}
+        onClose={() => setManageGroup(null)}
       />
     </Box>
   );

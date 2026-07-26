@@ -136,7 +136,6 @@ export interface components {
     };
     UpdateGroupRequest: {
       code: string;
-      name: string;
       faculty?: string;
       speciality?: string;
       /** Format: int32 */
@@ -146,7 +145,6 @@ export interface components {
       /** Format: int64 */
       id?: number;
       code?: string;
-      name?: string;
       faculty?: string;
       speciality?: string;
       /** Format: int32 */
@@ -293,7 +291,6 @@ export interface components {
     };
     CreateGroupRequest: {
       code: string;
-      name: string;
       faculty?: string;
       speciality?: string;
       /** Format: int32 */

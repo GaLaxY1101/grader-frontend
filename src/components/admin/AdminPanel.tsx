@@ -5,6 +5,7 @@ import type { components } from '@/lib/api/types/index';
 import { Box, Tab, Tabs } from '@mui/material';
 import { useState } from 'react';
 import { GroupsTab } from './GroupsTab';
+import { StudentsTab } from './StudentsTab';
 import { UsersTab } from './UsersTab';
 
 type UserResponse = components['schemas']['UserResponse'];
@@ -20,15 +21,17 @@ export const AdminPanel = ({ users, groups }: AdminPanelProps) => {
 
   return (
     <Box sx={{ p: 4 }}>
-      <PageHeader title="Admin" subtitle="Manage users and groups" />
+      <PageHeader title="Admin" subtitle="Manage users, groups and students" />
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={(_, v: number) => setActiveTab(v)}>
           <Tab label="Users" />
           <Tab label="Groups" />
+          <Tab label="Students" />
         </Tabs>
       </Box>
       {activeTab === 0 && <UsersTab users={users} />}
       {activeTab === 1 && <GroupsTab groups={groups} />}
+      {activeTab === 2 && <StudentsTab groups={groups} />}
     </Box>
   );
 };
