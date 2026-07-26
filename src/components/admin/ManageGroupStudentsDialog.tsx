@@ -19,6 +19,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  TablePagination,
   TextField,
   Tooltip,
   Typography,
@@ -49,6 +50,8 @@ export const ManageGroupStudentsDialog = ({
   const [addFilter, setAddFilter] = useState('');
   const [removing, setRemoving] = useState<number | null>(null);
   const [adding, setAdding] = useState<number | null>(null);
+  const [addPage, setAddPage] = useState(0);
+  const [addRowsPerPage, setAddRowsPerPage] = useState(10);
 
   const fetchMembers = useCallback(async () => {
     if (group?.id == null) return;
@@ -87,10 +90,15 @@ export const ManageGroupStudentsDialog = ({
     if (open && group != null) {
       setMemberFilter('');
       setAddFilter('');
+      setAddPage(0);
       void fetchMembers();
       void fetchAllStudents();
     }
   }, [open, group, fetchMembers, fetchAllStudents]);
+
+  useEffect(() => {
+    setAddPage(0);
+  }, [addFilter]);
 
   const memberIds = useMemo(() => new Set(members.map((m) => m.studentId)), [members]);
 
@@ -106,10 +114,16 @@ export const ManageGroupStudentsDialog = ({
     const q = addFilter.toLowerCase();
     return allStudents.filter(
       (s) =>
+        s.groupId == null &&
         !memberIds.has(s.id) &&
         (q === '' || `${s.firstName ?? ''} ${s.lastName ?? ''}`.toLowerCase().includes(q)),
     );
   }, [allStudents, memberIds, addFilter]);
+
+  const pagedAvailableStudents = useMemo(
+    () => availableStudents.slice(addPage * addRowsPerPage, (addPage + 1) * addRowsPerPage),
+    [availableStudents, addPage, addRowsPerPage],
+  );
 
   const handleRemove = async (studentId: number) => {
     if (group?.id == null) return;
@@ -123,6 +137,11 @@ export const ManageGroupStudentsDialog = ({
         return;
       }
       setMembers((prev) => prev.filter((m) => m.studentId !== studentId));
+      setAllStudents((prev) =>
+        prev.map((s) =>
+          s.id === studentId ? { ...s, groupId: undefined, groupCode: undefined } : s,
+        ),
+      );
       toast.success('Student removed');
     } finally {
       setRemoving(null);
@@ -141,6 +160,11 @@ export const ManageGroupStudentsDialog = ({
         return;
       }
       if (data != null) setMembers((prev) => [...prev, data]);
+      setAllStudents((prev) =>
+        prev.map((s) =>
+          s.id === studentId ? { ...s, groupId: group.id, groupCode: group.code } : s,
+        ),
+      );
       toast.success('Student added');
     } finally {
       setAdding(null);
@@ -229,7 +253,10 @@ export const ManageGroupStudentsDialog = ({
 
           <Box>
             <Typography variant="subtitle2" gutterBottom>
-              Add Student
+              Add Student <Chip label={availableStudents.length} size="small" sx={{ ml: 0.5 }} />
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              Only students without an active group are shown.
             </Typography>
             <TextField
               size="small"
@@ -257,41 +284,55 @@ export const ManageGroupStudentsDialog = ({
                 sx={{ py: 2, textAlign: 'center' }}
               >
                 {addFilter
-                  ? 'No students match your search'
-                  : 'All students are already in this group'}
+                  ? 'No unassigned students match your search'
+                  : 'No unassigned students available'}
               </Typography>
             ) : (
-              <List dense disablePadding sx={{ maxHeight: 340, overflow: 'auto' }}>
-                {availableStudents.map((student) => (
-                  <ListItem
-                    key={student.id}
-                    disableGutters
-                    secondaryAction={
-                      <Tooltip title="Add to group">
-                        <span>
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            disabled={adding === student.id}
-                            onClick={() => student.id != null && void handleAdd(student.id)}
-                          >
-                            {adding === student.id ? (
-                              <CircularProgress size={14} />
-                            ) : (
-                              <PersonAddIcon fontSize="small" />
-                            )}
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    }
-                  >
-                    <ListItemText
-                      primary={`${student.firstName ?? ''} ${student.lastName ?? ''}`}
-                      secondary={student.email}
-                    />
-                  </ListItem>
-                ))}
-              </List>
+              <>
+                <List dense disablePadding>
+                  {pagedAvailableStudents.map((student) => (
+                    <ListItem
+                      key={student.id}
+                      disableGutters
+                      secondaryAction={
+                        <Tooltip title="Add to group">
+                          <span>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              disabled={adding === student.id}
+                              onClick={() => student.id != null && void handleAdd(student.id)}
+                            >
+                              {adding === student.id ? (
+                                <CircularProgress size={14} />
+                              ) : (
+                                <PersonAddIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      }
+                    >
+                      <ListItemText
+                        primary={`${student.firstName ?? ''} ${student.lastName ?? ''}`}
+                        secondary={student.email}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+                <TablePagination
+                  component="div"
+                  count={availableStudents.length}
+                  page={addPage}
+                  onPageChange={(_, next) => setAddPage(next)}
+                  rowsPerPage={addRowsPerPage}
+                  onRowsPerPageChange={(e) => {
+                    setAddRowsPerPage(parseInt(e.target.value, 10));
+                    setAddPage(0);
+                  }}
+                  rowsPerPageOptions={[10, 25, 50]}
+                />
+              </>
             )}
           </Box>
         </Box>

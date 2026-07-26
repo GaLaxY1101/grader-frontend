@@ -280,6 +280,9 @@ export interface components {
       email?: string;
       /** Format: date-time */
       createdAt?: string;
+      /** Format: int64 */
+      groupId?: number;
+      groupCode?: string;
     };
     CreateGroupRequest: {
       code: string;
