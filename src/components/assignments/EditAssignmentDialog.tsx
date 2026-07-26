@@ -18,9 +18,13 @@ import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
 import FormLabel from '@mui/material/FormLabel';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
+import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
+import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/navigation';
@@ -44,6 +48,8 @@ const schema = z
     description: z.string().optional(),
     maxScore: z.number().min(1, 'Min 1').max(1000, 'Max 1000'),
     deadline: z.string().optional(),
+    enableCodeCheck: z.boolean(),
+    language: z.enum(['C', 'CPP']).optional(),
     testMode: z.enum(['IO', 'UNIT_TEST']).optional(),
     ciConfigTemplate: z.string().optional(),
     functionSignature: z.string().optional(),
@@ -51,6 +57,14 @@ const schema = z
     testCases: z.array(testCaseSchema).optional(),
   })
   .superRefine((data, ctx) => {
+    if (!data.enableCodeCheck) return;
+    if (!data.language) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Language is required',
+        path: ['language'],
+      });
+    }
     if (!data.functionSignature?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -58,12 +72,21 @@ const schema = z
         path: ['functionSignature'],
       });
     }
-    if (data.testMode === 'UNIT_TEST' && !data.testFileContent?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Test file content is required for unit test mode',
-        path: ['testFileContent'],
-      });
+    if (data.testMode === 'UNIT_TEST') {
+      if (data.language !== 'CPP') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Unit test mode requires C++',
+          path: ['language'],
+        });
+      }
+      if (!data.testFileContent?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Test file content is required for unit test mode',
+          path: ['testFileContent'],
+        });
+      }
     }
   });
 
@@ -90,7 +113,7 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const programmingTask = assignment.programmingTask;
-  const hasProgrammingTask = programmingTask != null;
+  const hadCodeCheck = programmingTask != null;
 
   const {
     register,
@@ -107,6 +130,8 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
       description: assignment.description ?? '',
       maxScore: assignment.maxScore ?? 100,
       deadline: toDatetimeLocal(assignment.deadline),
+      enableCodeCheck: hadCodeCheck,
+      language: programmingTask?.language ?? undefined,
       testMode: programmingTask?.testMode ?? 'IO',
       ciConfigTemplate: programmingTask?.ciConfigTemplate ?? '',
       functionSignature: programmingTask?.functionSignature ?? '',
@@ -121,6 +146,7 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
     },
   });
 
+  const enableCodeCheck = watch('enableCodeCheck');
   const testMode = watch('testMode');
   const testCases = watch('testCases');
 
@@ -135,6 +161,8 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
       description: assignment.description ?? '',
       maxScore: assignment.maxScore ?? 100,
       deadline: toDatetimeLocal(assignment.deadline),
+      enableCodeCheck: hadCodeCheck,
+      language: programmingTask?.language ?? undefined,
       testMode: programmingTask?.testMode ?? 'IO',
       ciConfigTemplate: programmingTask?.ciConfigTemplate ?? '',
       functionSignature: programmingTask?.functionSignature ?? '',
@@ -147,7 +175,7 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
           expectedOutput: tc.expectedOutput ?? '',
         })) ?? [],
     });
-  }, [assignment, programmingTask, reset]);
+  }, [assignment, programmingTask, hadCodeCheck, reset]);
 
   const handleTestFileUpload = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,11 +199,18 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
 
   const onSubmit = async (data: EditAssignmentFormData) => {
     if (assignment.id == null) return;
+
+    if (hadCodeCheck && !data.enableCodeCheck) {
+      const confirmed = window.confirm(
+        'This will delete the existing code check configuration (function signature, test cases, etc.). Continue?',
+      );
+      if (!confirmed) return;
+    }
+
     setSubmitting(true);
     try {
-      // Validate compilation if programming task
-      if (hasProgrammingTask && data.functionSignature) {
-        const { data: compileResult, error: compileError } = await apiClient.POST(
+      if (data.enableCodeCheck && data.functionSignature) {
+        const { data: compileResult, error: compileErr } = await apiClient.POST(
           '/api/compile/validate',
           {
             body: {
@@ -185,7 +220,7 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
             },
           },
         );
-        if (compileError || !compileResult) {
+        if (compileErr || !compileResult) {
           toast.error('Failed to validate compilation');
           setSubmitting(false);
           return;
@@ -204,9 +239,9 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
           description: data.description || undefined,
           maxScore: data.maxScore,
           deadline: data.deadline || undefined,
-          programmingTask: hasProgrammingTask
+          programmingTask: data.enableCodeCheck
             ? {
-                language: programmingTask!.language,
+                language: data.language as 'C' | 'CPP',
                 testMode: (data.testMode as 'IO' | 'UNIT_TEST') ?? 'IO',
                 ciConfigTemplate: data.ciConfigTemplate || undefined,
                 functionSignature: data.functionSignature || undefined,
@@ -285,15 +320,50 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
                 fullWidth
               />
 
-              {/* Programming task fields */}
-              {hasProgrammingTask && (
-                <>
-                  <Divider />
-                  <Typography variant="subtitle1" fontWeight={600}>
-                    Programming Task
-                  </Typography>
+              <Divider />
 
-                  {/* Test mode selector */}
+              <Controller
+                name="enableCodeCheck"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="subtitle2">Enable Code Check</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Students submit C/C++ code that is compiled and tested automatically.
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                )}
+              />
+
+              {enableCodeCheck && (
+                <>
+                  <Controller
+                    name="language"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl fullWidth required error={errors.language != null}>
+                        <InputLabel>Language</InputLabel>
+                        <Select {...field} label="Language" value={field.value ?? ''}>
+                          <MenuItem value="C">C</MenuItem>
+                          <MenuItem value="CPP">C++</MenuItem>
+                        </Select>
+                        {errors.language && (
+                          <FormHelperText>{errors.language.message}</FormHelperText>
+                        )}
+                      </FormControl>
+                    )}
+                  />
+
                   <FormControl>
                     <FormLabel sx={{ mb: 1 }}>
                       <Typography variant="subtitle2">Test mode</Typography>
@@ -328,7 +398,6 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
                     fullWidth
                   />
 
-                  {/* Function signature — always shown */}
                   <Divider />
                   <Box
                     sx={{
@@ -383,7 +452,6 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
                     <FormHelperText error>{errors.functionSignature.message}</FormHelperText>
                   )}
 
-                  {/* Unit test mode: test file editor */}
                   {testMode === 'UNIT_TEST' && (
                     <>
                       <Divider />
@@ -455,7 +523,6 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
                     </>
                   )}
 
-                  {/* I/O Test cases (only shown in IO mode) */}
                   {testMode !== 'UNIT_TEST' && (
                     <>
                       <Divider />

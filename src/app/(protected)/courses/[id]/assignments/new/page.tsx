@@ -21,6 +21,7 @@ import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
+import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/navigation';
@@ -42,32 +43,30 @@ const schema = z
     description: z.string().optional(),
     maxScore: z.number().min(1, 'Min 1').max(1000, 'Max 1000'),
     deadline: z.string().optional(),
-    taskType: z.enum(['NONE', 'CODE', 'FILE']),
+    enableCodeCheck: z.boolean(),
     language: z.enum(['C', 'CPP']).optional(),
     testMode: z.enum(['IO', 'UNIT_TEST']).optional(),
     functionSignature: z.string().optional(),
     testFileContent: z.string().optional(),
     testCases: z.array(testCaseSchema).optional(),
-    allowedExtensions: z.string().optional(),
-    maxFileSize: z.number().optional(),
-    allowedFileCount: z.number().min(1).optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.taskType === 'CODE' && !data.language) {
+    if (!data.enableCodeCheck) return;
+    if (!data.language) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Language is required for code tasks',
         path: ['language'],
       });
     }
-    if (data.taskType === 'CODE' && !data.functionSignature?.trim()) {
+    if (!data.functionSignature?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Function signature is required',
         path: ['functionSignature'],
       });
     }
-    if (data.taskType === 'CODE' && data.testMode === 'UNIT_TEST') {
+    if (data.testMode === 'UNIT_TEST') {
       if (data.language !== 'CPP') {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -103,14 +102,14 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
   } = useForm<CreateAssignmentFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      taskType: 'NONE',
+      enableCodeCheck: false,
       testMode: 'IO',
       maxScore: 100,
       testCases: [],
     },
   });
 
-  const taskType = watch('taskType');
+  const enableCodeCheck = watch('enableCodeCheck');
   const testMode = watch('testMode');
   const testCases = watch('testCases');
 
@@ -133,7 +132,7 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
   const onSubmit = async (data: CreateAssignmentFormData) => {
     setSubmitting(true);
     try {
-      if (data.taskType === 'CODE' && data.functionSignature) {
+      if (data.enableCodeCheck && data.functionSignature) {
         const { data: compileResult, error: compileErr } = await apiClient.POST(
           '/api/compile/validate',
           {
@@ -161,39 +160,25 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
           description: data.description || undefined,
           maxScore: data.maxScore,
           deadline: data.deadline || undefined,
-          programmingTask:
-            data.taskType === 'CODE'
-              ? {
-                  language: data.language as 'C' | 'CPP',
-                  testMode: (data.testMode as 'IO' | 'UNIT_TEST') ?? 'IO',
-                  functionSignature: data.functionSignature || undefined,
-                  testFileContent:
-                    data.testMode === 'UNIT_TEST' ? data.testFileContent || undefined : undefined,
-                  testCases:
-                    data.testMode !== 'UNIT_TEST'
-                      ? data.testCases?.map((tc) => ({
-                          name: tc.name,
-                          testType: tc.testType as 'IO' | 'EXCEPTION',
-                          input: tc.input || undefined,
-                          expectedOutput:
-                            tc.testType === 'IO' ? tc.expectedOutput || undefined : undefined,
-                        }))
-                      : undefined,
-                }
-              : undefined,
-          fileUploadTask:
-            data.taskType === 'FILE'
-              ? {
-                  allowedExtensions: data.allowedExtensions
-                    ? data.allowedExtensions
-                        .split(',')
-                        .map((s) => s.trim())
-                        .filter(Boolean)
+          programmingTask: data.enableCodeCheck
+            ? {
+                language: data.language as 'C' | 'CPP',
+                testMode: (data.testMode as 'IO' | 'UNIT_TEST') ?? 'IO',
+                functionSignature: data.functionSignature || undefined,
+                testFileContent:
+                  data.testMode === 'UNIT_TEST' ? data.testFileContent || undefined : undefined,
+                testCases:
+                  data.testMode !== 'UNIT_TEST'
+                    ? data.testCases?.map((tc) => ({
+                        name: tc.name,
+                        testType: tc.testType as 'IO' | 'EXCEPTION',
+                        input: tc.input || undefined,
+                        expectedOutput:
+                          tc.testType === 'IO' ? tc.expectedOutput || undefined : undefined,
+                      }))
                     : undefined,
-                  maxFileSize: data.maxFileSize || undefined,
-                  allowedFileCount: data.allowedFileCount ?? 1,
-                }
-              : undefined,
+              }
+            : undefined,
         },
       });
 
@@ -230,7 +215,8 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
           New Assignment
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-          Fill in the details below and click Create when ready.
+          Fill in the details below and click Create when ready. Students can attach any files to
+          their submission.
         </Typography>
 
         <Paper
@@ -278,32 +264,30 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
 
             <Divider />
 
-            <FormControl>
-              <FormLabel sx={{ mb: 1 }}>
-                <Typography variant="subtitle2">Task type</Typography>
-              </FormLabel>
-              <Controller
-                name="taskType"
-                control={control}
-                render={({ field }) => (
-                  <RadioGroup row {...field}>
-                    <FormControlLabel
-                      value="NONE"
-                      control={<Radio size="small" />}
-                      label="Text / Manual"
+            <Controller
+              name="enableCodeCheck"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
                     />
-                    <FormControlLabel value="CODE" control={<Radio size="small" />} label="Code" />
-                    <FormControlLabel
-                      value="FILE"
-                      control={<Radio size="small" />}
-                      label="File Upload"
-                    />
-                  </RadioGroup>
-                )}
-              />
-            </FormControl>
+                  }
+                  label={
+                    <Box>
+                      <Typography variant="subtitle2">Enable Code Check</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Students submit C/C++ code that is compiled and tested automatically.
+                      </Typography>
+                    </Box>
+                  }
+                />
+              )}
+            />
 
-            {taskType === 'CODE' && (
+            {enableCodeCheck && (
               <>
                 <Controller
                   name="language"
@@ -568,34 +552,6 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
                     ))}
                   </>
                 )}
-              </>
-            )}
-
-            {taskType === 'FILE' && (
-              <>
-                <TextField
-                  {...register('allowedExtensions')}
-                  label="Allowed extensions"
-                  placeholder="e.g. pdf, docx, zip"
-                  helperText="Comma-separated list"
-                  fullWidth
-                />
-                <TextField
-                  {...register('maxFileSize', { valueAsNumber: true })}
-                  label="Max file size (KB)"
-                  type="number"
-                  error={errors.maxFileSize != null}
-                  helperText={errors.maxFileSize?.message}
-                  fullWidth
-                />
-                <TextField
-                  {...register('allowedFileCount', { valueAsNumber: true })}
-                  label="Max file count"
-                  type="number"
-                  error={errors.allowedFileCount != null}
-                  helperText={errors.allowedFileCount?.message}
-                  fullWidth
-                />
               </>
             )}
 

@@ -1,8 +1,6 @@
 import type { components } from '@/lib/api/types/index';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import ArticleIcon from '@mui/icons-material/Article';
 import CodeIcon from '@mui/icons-material/Code';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -45,8 +43,7 @@ export const AssignmentCard = ({ assignment }: AssignmentCardProps) => {
   const status = getDeadlineStatus(assignment.deadline);
   const deadlineLabel = formatDeadline(assignment.deadline);
 
-  const isProgramming = assignment.programmingTask != null;
-  const isFileUpload = assignment.fileUploadTask != null;
+  const hasCodeCheck = assignment.programmingTask != null;
 
   const style = status != null ? deadlineStyles[status] : null;
 
@@ -184,10 +181,10 @@ export const AssignmentCard = ({ assignment }: AssignmentCardProps) => {
               )}
             </Box>
 
-            {/* Task type chip */}
-            {isProgramming ? (
+            {/* Code check chip (only when enabled) */}
+            {hasCodeCheck && (
               <Chip
-                label="Code"
+                label="Code Check"
                 icon={<CodeIcon sx={{ fontSize: '14px !important' }} />}
                 size="small"
                 sx={{
@@ -197,34 +194,6 @@ export const AssignmentCard = ({ assignment }: AssignmentCardProps) => {
                   color: '#4338CA',
                   borderRadius: '5px',
                   '& .MuiChip-icon': { color: '#4338CA' },
-                }}
-              />
-            ) : isFileUpload ? (
-              <Chip
-                label="File"
-                icon={<UploadFileIcon sx={{ fontSize: '14px !important' }} />}
-                size="small"
-                sx={{
-                  fontWeight: 600,
-                  fontSize: '0.7rem',
-                  backgroundColor: '#F0FDF4',
-                  color: '#15803D',
-                  borderRadius: '5px',
-                  '& .MuiChip-icon': { color: '#15803D' },
-                }}
-              />
-            ) : (
-              <Chip
-                label="Text"
-                icon={<ArticleIcon sx={{ fontSize: '14px !important' }} />}
-                size="small"
-                sx={{
-                  fontWeight: 600,
-                  fontSize: '0.7rem',
-                  backgroundColor: '#F8FAFC',
-                  color: '#475569',
-                  borderRadius: '5px',
-                  '& .MuiChip-icon': { color: '#475569' },
                 }}
               />
             )}

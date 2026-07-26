@@ -219,14 +219,6 @@ export interface components {
       /** Format: date-time */
       updatedAt?: string;
       programmingTask?: components['schemas']['ProgrammingTaskDetails'];
-      fileUploadTask?: components['schemas']['FileUploadTaskDetails'];
-    };
-    FileUploadTaskDetails: {
-      allowedExtensions?: string[];
-      /** Format: int32 */
-      maxFileSize?: number;
-      /** Format: int32 */
-      allowedFileCount?: number;
     };
     GitLabWebhookPayload: {
       object_kind?: string;
@@ -339,7 +331,6 @@ export interface components {
       /** Format: date-time */
       deadline?: string;
       programmingTask?: components['schemas']['ProgrammingTaskDetails'];
-      fileUploadTask?: components['schemas']['FileUploadTaskDetails'];
     };
     CompileRequest: {
       solutionCode: string;

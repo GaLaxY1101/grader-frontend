@@ -10,7 +10,6 @@ import { Role } from '@/utils/roles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CodeIcon from '@mui/icons-material/Code';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -86,10 +85,7 @@ export default async function AssignmentDetailPage({
 
   const deadline = formatDeadline(assignment?.deadline);
   const programmingTask = assignment?.programmingTask;
-  const fileUploadTask = assignment?.fileUploadTask;
-
-  const taskType =
-    programmingTask != null ? 'Code' : fileUploadTask != null ? 'File Upload' : 'Text';
+  const hasCodeCheck = programmingTask != null;
 
   return (
     <Box sx={{ p: 4 }}>
@@ -131,18 +127,9 @@ export default async function AssignmentDetailPage({
               <Typography variant="h5" fontWeight={600}>
                 {assignment?.title ?? '—'}
               </Typography>
-              <Chip
-                label={taskType}
-                size="small"
-                icon={
-                  taskType === 'Code' ? (
-                    <CodeIcon />
-                  ) : taskType === 'File Upload' ? (
-                    <UploadFileIcon />
-                  ) : undefined
-                }
-                variant="outlined"
-              />
+              {hasCodeCheck && (
+                <Chip label="Code Check" size="small" icon={<CodeIcon />} variant="outlined" />
+              )}
             </Box>
 
             {assignment?.description != null && (
@@ -212,11 +199,7 @@ export default async function AssignmentDetailPage({
               </Box>
             )}
 
-            {fileUploadTask != null ? (
-              <Alert severity="info">
-                File upload submissions are not yet supported in this UI.
-              </Alert>
-            ) : (
+            {hasCodeCheck ? (
               <SubmissionForm
                 assignmentId={assignmentId}
                 language={programmingTask?.language}
@@ -225,6 +208,8 @@ export default async function AssignmentDetailPage({
                 functionSignature={programmingTask?.functionSignature}
                 lastAttemptCode={latestAttemptCode}
               />
+            ) : (
+              <Alert severity="info">File attachment submissions are coming soon.</Alert>
             )}
           </Box>
         )}
