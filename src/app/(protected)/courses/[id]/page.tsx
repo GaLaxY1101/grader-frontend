@@ -9,21 +9,12 @@ import { auth } from '@/lib/server/auth';
 import { Role } from '@/utils/roles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Alert from '@mui/material/Alert';
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { getServerSession } from 'next-auth';
 import Link from 'next/link';
-
-function getInitials(firstName: string | undefined, lastName: string | undefined): string {
-  return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase();
-}
 
 export default async function CourseDetailPage({ params }: { params: { id: string } }) {
   const courseId = Number(params.id);
@@ -55,7 +46,7 @@ export default async function CourseDetailPage({ params }: { params: { id: strin
 
   return (
     <Box sx={{ p: 4 }}>
-      {/* Header: back button + edit action */}
+      {/* Header: back button + course actions */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Button
           component={Link}
@@ -66,7 +57,12 @@ export default async function CourseDetailPage({ params }: { params: { id: strin
         >
           Back to courses
         </Button>
-        {canManage && course != null && <EditCourseButton course={course} />}
+        {canManage && (
+          <Stack direction="row" spacing={1}>
+            <ManageStudentsButton courseId={courseId} enrolledStudents={studentList} />
+            {course != null && <EditCourseButton course={course} />}
+          </Stack>
+        )}
       </Box>
 
       <Stack spacing={4}>
@@ -119,74 +115,6 @@ export default async function CourseDetailPage({ params }: { params: { id: strin
             </Stack>
           )}
         </Box>
-
-        {/* Students section — TEACHER / ADMIN only */}
-        {canManage && (
-          <Box>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 2,
-                pb: 2,
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <Box>
-                <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
-                  Students
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {studentList.length} enrolled
-                </Typography>
-              </Box>
-              <ManageStudentsButton courseId={courseId} enrolledStudents={studentList} />
-            </Box>
-
-            {studentList.length === 0 ? (
-              <EmptyState
-                title="No students enrolled"
-                description="Enroll students to see them here."
-              />
-            ) : (
-              <List disablePadding>
-                {studentList.map((student, idx) => (
-                  <ListItem
-                    key={student.studentId}
-                    disableGutters
-                    sx={{
-                      py: 1.25,
-                      borderBottom: idx < studentList.length - 1 ? '1px solid' : 'none',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <ListItemAvatar>
-                      <Avatar
-                        sx={{
-                          background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
-                          width: 36,
-                          height: 36,
-                          fontSize: '0.8125rem',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {getInitials(student.firstName, student.lastName)}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={`${student.firstName ?? ''} ${student.lastName ?? ''}`.trim() || '—'}
-                      secondary={student.email}
-                      primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9375rem' }}
-                      secondaryTypographyProps={{ fontSize: '0.8125rem' }}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </Box>
-        )}
       </Stack>
     </Box>
   );

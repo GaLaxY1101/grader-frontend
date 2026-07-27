@@ -59,6 +59,10 @@ export interface paths {
     post: operations['enrollStudent'];
     delete: operations['unenrollStudent'];
   };
+  '/api/courses/{id}/groups/{groupId}': {
+    post: operations['enrollGroup'];
+    delete: operations['unenrollGroup'];
+  };
   '/api/courses/{courseId}/assignments': {
     get: operations['listAssignments'];
     post: operations['createAssignment'];
@@ -325,6 +329,9 @@ export interface components {
       /** Format: date-time */
       enrolledAt?: string;
       status?: string;
+      /** Format: int64 */
+      groupId?: number;
+      groupCode?: string;
     };
     CreateAssignmentRequest: {
       title: string;
@@ -865,6 +872,38 @@ export interface operations {
       /** @description OK */
       200: {
         content: never;
+      };
+    };
+  };
+  enrollGroup: {
+    parameters: {
+      path: {
+        id: number;
+        groupId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['EnrolledStudentResponse'][];
+        };
+      };
+    };
+  };
+  unenrollGroup: {
+    parameters: {
+      path: {
+        id: number;
+        groupId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': number[];
+        };
       };
     };
   };
