@@ -17,7 +17,6 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
-import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { getServerSession } from 'next-auth';
 import Link from 'next/link';
@@ -89,142 +88,198 @@ export default async function AssignmentDetailPage({
 
   return (
     <Box sx={{ p: 4 }}>
-      {/* Back button + edit action */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Button
-          component={Link}
-          href={`/courses/${courseId}`}
-          startIcon={<ArrowBackIcon />}
-          variant="text"
-          color="inherit"
+      <Card>
+        {/* Toolbar row */}
+        <CardContent
+          sx={{
+            py: 1.5,
+            px: 3,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            '&:last-child': { pb: 1.5 },
+          }}
         >
-          Back to course
-        </Button>
-        {canManage && assignment != null && (
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <EditAssignmentButton assignment={assignment} />
-            <DeleteAssignmentButton
-              assignmentId={assignment.id!}
-              assignmentTitle={assignment.title ?? ''}
-              courseId={courseId}
-            />
-          </Box>
-        )}
-      </Box>
-
-      <Stack spacing={4}>
-        {/* Assignment info card */}
-        <Card variant="outlined">
-          <CardContent sx={{ p: 3 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                mb: 2,
-              }}
-            >
-              <Typography variant="h5" fontWeight={600}>
-                {assignment?.title ?? '—'}
-              </Typography>
-              {hasCodeCheck && (
-                <Chip label="Code Check" size="small" icon={<CodeIcon />} variant="outlined" />
-              )}
-            </Box>
-
-            {assignment?.description != null && (
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{ mb: 2, whiteSpace: 'pre-wrap' }}
-              >
-                {assignment.description}
-              </Typography>
-            )}
-
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <CalendarTodayIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                <Typography variant="body2" color={deadline.color}>
-                  {deadline.label}
-                </Typography>
-              </Box>
-              <Chip
-                label={`Max score: ${assignment?.maxScore ?? '—'}`}
-                size="small"
-                variant="outlined"
+          <Button
+            component={Link}
+            href={`/courses/${courseId}`}
+            startIcon={<ArrowBackIcon />}
+            variant="text"
+            color="inherit"
+            size="small"
+          >
+            Back to course
+          </Button>
+          {canManage && assignment != null && (
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <EditAssignmentButton assignment={assignment} />
+              <DeleteAssignmentButton
+                assignmentId={assignment.id!}
+                assignmentTitle={assignment.title ?? ''}
+                courseId={courseId}
               />
-              {programmingTask?.language != null && (
+            </Box>
+          )}
+        </CardContent>
+        <Divider />
+
+        {/* Hero row */}
+        <CardContent sx={{ p: 3 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: 2,
+              mb: assignment?.description != null ? 2 : 2.5,
+            }}
+          >
+            <Typography variant="h4" fontWeight={600}>
+              {assignment?.title ?? '—'}
+            </Typography>
+            {hasCodeCheck && (
+              <Chip
+                label="Code Check"
+                size="small"
+                icon={<CodeIcon />}
+                variant="outlined"
+                sx={{ flexShrink: 0 }}
+              />
+            )}
+          </Box>
+
+          {assignment?.description != null && (
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ mb: 2.5, whiteSpace: 'pre-wrap' }}
+            >
+              {assignment.description}
+            </Typography>
+          )}
+
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <CalendarTodayIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+              <Typography variant="body2" color={deadline.color} fontWeight={500}>
+                {deadline.label}
+              </Typography>
+            </Box>
+            <Typography component="span" color="text.disabled" sx={{ lineHeight: 1 }}>
+              •
+            </Typography>
+            <Chip
+              label={`Max score: ${assignment?.maxScore ?? '—'}`}
+              size="small"
+              variant="outlined"
+            />
+            {programmingTask?.language != null && (
+              <>
+                <Typography component="span" color="text.disabled" sx={{ lineHeight: 1 }}>
+                  •
+                </Typography>
                 <Chip
                   label={programmingTask.language}
                   size="small"
                   color="primary"
                   variant="outlined"
                 />
-              )}
-            </Box>
-          </CardContent>
-        </Card>
-
-        {/* Student: submission form + latest status */}
-        {isStudent && (
-          <Box>
-            {mySubmission != null && (
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" fontWeight={600} gutterBottom>
-                  My submission
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <SubmissionStatusBadge status={mySubmission.status} />
-                  {mySubmission.bestScore != null && (
-                    <Chip
-                      label={`Best: ${mySubmission.bestScore} / ${assignment?.maxScore ?? '?'} pts`}
-                      size="small"
-                    />
-                  )}
-                  <Chip
-                    label={`${mySubmission.attemptCount} attempt${mySubmission.attemptCount === 1 ? '' : 's'}`}
-                    size="small"
-                    variant="outlined"
-                  />
-                  <Button
-                    component={Link}
-                    href={`/submissions/${mySubmission.id}`}
-                    size="small"
-                    variant="text"
-                  >
-                    View attempts
-                  </Button>
-                </Box>
-              </Box>
-            )}
-
-            {hasCodeCheck ? (
-              <SubmissionForm
-                assignmentId={assignmentId}
-                language={programmingTask?.language}
-                existingSubmissionId={mySubmission?.id}
-                testMode={programmingTask?.testMode}
-                functionSignature={programmingTask?.functionSignature}
-                lastAttemptCode={latestAttemptCode}
-              />
-            ) : (
-              <Alert severity="info">File attachment submissions are coming soon.</Alert>
+              </>
             )}
           </Box>
+        </CardContent>
+
+        {/* Student: current submission status */}
+        {isStudent && mySubmission != null && (
+          <>
+            <Divider />
+            <CardContent sx={{ p: 3 }}>
+              <Typography
+                variant="overline"
+                sx={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  color: 'text.secondary',
+                  mb: 1.5,
+                  display: 'block',
+                }}
+              >
+                Your submission
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                <SubmissionStatusBadge status={mySubmission.status} />
+                {mySubmission.bestScore != null && (
+                  <Chip
+                    label={`Best: ${mySubmission.bestScore} / ${assignment?.maxScore ?? '?'} pts`}
+                    size="small"
+                  />
+                )}
+                <Chip
+                  label={`${mySubmission.attemptCount} attempt${mySubmission.attemptCount === 1 ? '' : 's'}`}
+                  size="small"
+                  variant="outlined"
+                />
+                <Button
+                  component={Link}
+                  href={`/submissions/${mySubmission.id}`}
+                  size="small"
+                  variant="text"
+                  sx={{ ml: 'auto' }}
+                >
+                  View attempts
+                </Button>
+              </Box>
+            </CardContent>
+          </>
         )}
 
-        {/* Teacher/admin: all submissions */}
-        {canManage && (
-          <Box>
-            <Divider sx={{ mb: 3 }} />
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+        {/* Student: submit form */}
+        {isStudent && (
+          <>
+            <Divider />
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Typography variant="h6" fontWeight={600}>
+                  Submit your solution
+                </Typography>
+                {programmingTask?.language != null && (
+                  <Chip
+                    label={programmingTask.language}
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                  />
+                )}
+              </Box>
+              {hasCodeCheck ? (
+                <SubmissionForm
+                  assignmentId={assignmentId}
+                  language={programmingTask?.language}
+                  existingSubmissionId={mySubmission?.id}
+                  testMode={programmingTask?.testMode}
+                  functionSignature={programmingTask?.functionSignature}
+                  lastAttemptCode={latestAttemptCode}
+                />
+              ) : (
+                <Alert severity="info">File attachment submissions are coming soon.</Alert>
+              )}
+            </CardContent>
+          </>
+        )}
+      </Card>
+
+      {/* Teacher/admin: all submissions */}
+      {canManage && (
+        <Card sx={{ mt: 4 }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
               Submissions ({allSubmissions.length})
             </Typography>
             <SubmissionList submissions={allSubmissions} />
-          </Box>
-        )}
-      </Stack>
+          </CardContent>
+        </Card>
+      )}
     </Box>
   );
 }

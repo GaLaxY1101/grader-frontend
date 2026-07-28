@@ -8,9 +8,7 @@ import { LoadingButton } from '@mui/lab';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
@@ -110,15 +108,6 @@ export const SubmissionForm = ({
         onSubmit={handleSubmit}
         sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="subtitle1" fontWeight={600}>
-            Submit your solution
-          </Typography>
-          {language != null && (
-            <Chip label={language} size="small" variant="outlined" color="primary" />
-          )}
-        </Box>
-
         {existingSubmissionId != null && (
           <Alert severity="info" sx={{ mb: 1 }}>
             You have a previous submission.{' '}
