@@ -11,6 +11,9 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { getServerSession } from 'next-auth';
@@ -46,44 +49,54 @@ export default async function CourseDetailPage({ params }: { params: { id: strin
 
   return (
     <Box sx={{ p: 4 }}>
-      {/* Header: back button + course actions */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Button
-          component={Link}
-          href="/courses"
-          startIcon={<ArrowBackIcon />}
-          variant="text"
-          color="inherit"
+      <Card>
+        {/* Toolbar row */}
+        <CardContent
+          sx={{
+            py: 1.5,
+            px: 3,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            '&:last-child': { pb: 1.5 },
+          }}
         >
-          Back to courses
-        </Button>
-        {canManage && (
-          <Stack direction="row" spacing={1}>
-            <ManageStudentsButton courseId={courseId} enrolledStudents={studentList} />
-            {course != null && <EditCourseButton course={course} />}
-          </Stack>
-        )}
-      </Box>
+          <Button
+            component={Link}
+            href="/courses"
+            startIcon={<ArrowBackIcon />}
+            variant="text"
+            color="inherit"
+            size="small"
+          >
+            Back to courses
+          </Button>
+          {canManage && (
+            <Stack direction="row" spacing={1}>
+              <ManageStudentsButton courseId={courseId} enrolledStudents={studentList} />
+              {course != null && <EditCourseButton course={course} />}
+            </Stack>
+          )}
+        </CardContent>
+        <Divider />
 
-      <Stack spacing={4}>
-        {/* Course metadata */}
+        {/* Course info section */}
         {course != null && <CourseInfoCard course={course} />}
+      </Card>
 
-        {/* Assignments section */}
-        <Box>
+      {/* Assignments card */}
+      <Card sx={{ mt: 4 }}>
+        <CardContent sx={{ p: 3 }}>
           <Box
             sx={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              mb: 2,
-              pb: 2,
-              borderBottom: '1px solid',
-              borderColor: 'divider',
+              mb: 2.5,
             }}
           >
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
+              <Typography variant="h6" fontWeight={600}>
                 Assignments
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -114,8 +127,8 @@ export default async function CourseDetailPage({ params }: { params: { id: strin
               ))}
             </Stack>
           )}
-        </Box>
-      </Stack>
+        </CardContent>
+      </Card>
     </Box>
   );
 }
