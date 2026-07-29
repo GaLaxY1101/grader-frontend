@@ -9,6 +9,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { LoadingButton } from '@mui/lab';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -199,29 +201,42 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
   return (
     <>
       <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            variant="text"
-            color="inherit"
-            onClick={() => router.push(`/courses/${courseId}`)}
-            sx={{ mr: 2 }}
+        <Card>
+          {/* Toolbar row */}
+          <CardContent
+            sx={{
+              py: 1.5,
+              px: 3,
+              '&:last-child': { pb: 1.5 },
+            }}
           >
-            Back to course
-          </Button>
-        </Box>
+            <Button
+              startIcon={<ArrowBackIcon />}
+              variant="text"
+              color="inherit"
+              size="small"
+              onClick={() => router.push(`/courses/${courseId}`)}
+            >
+              Back to course
+            </Button>
+          </CardContent>
+          <Divider />
 
-        <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 0.5 }}>
-          New Assignment
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-          Fill in the details below and click Create when ready. Students can attach any files to
-          their submission.
-        </Typography>
+          {/* Hero */}
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 0.5 }}>
+              New Assignment
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Fill in the details below and click Create when ready. Students can attach any files
+              to their submission.
+            </Typography>
+          </CardContent>
+        </Card>
 
         <Paper
           variant="outlined"
-          sx={{ borderRadius: '12px', p: { xs: 2.5, sm: 4 } }}
+          sx={{ borderRadius: '12px', p: { xs: 2.5, sm: 4 }, mt: 4 }}
           component="form"
           onSubmit={handleSubmit(onSubmit)}
           noValidate

@@ -38,32 +38,38 @@ export default async function SubmissionDetailPage({ params }: { params: { id: s
 
   return (
     <Box sx={{ p: 4 }}>
-      <Button
-        component={Link}
-        href={`/courses`}
-        startIcon={<ArrowBackIcon />}
-        variant="text"
-        color="inherit"
-        sx={{ mb: 3 }}
-      >
-        Back
-      </Button>
+      <Card>
+        {/* Toolbar row */}
+        <CardContent
+          sx={{
+            py: 1.5,
+            px: 3,
+            '&:last-child': { pb: 1.5 },
+          }}
+        >
+          <Button
+            component={Link}
+            href={`/courses`}
+            startIcon={<ArrowBackIcon />}
+            variant="text"
+            color="inherit"
+            size="small"
+          >
+            Back
+          </Button>
+        </CardContent>
+        <Divider />
 
-      <Typography variant="h5" fontWeight={600} gutterBottom>
-        Submission
-      </Typography>
-
-      {/* Summary card */}
-      <Card variant="outlined" sx={{ mb: 4 }}>
+        {/* Hero + summary */}
         <CardContent sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Typography variant="subtitle1" fontWeight={600}>
-              Status
+            <Typography variant="h4" fontWeight={600}>
+              Submission
             </Typography>
             <SubmissionStatusBadge status={submission.status} />
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
             {submission.score != null && (
               <Chip label={`Latest: ${submission.score} pts`} size="small" variant="outlined" />
             )}
@@ -80,6 +86,9 @@ export default async function SubmissionDetailPage({ params }: { params: { id: s
               size="small"
               variant="outlined"
             />
+            <Typography component="span" color="text.disabled" sx={{ lineHeight: 1 }}>
+              •
+            </Typography>
             <Typography variant="body2" color="text.secondary">
               {submission.studentEmail}
             </Typography>
@@ -87,49 +96,54 @@ export default async function SubmissionDetailPage({ params }: { params: { id: s
         </CardContent>
       </Card>
 
-      {/* Attempt history */}
-      <Typography variant="h6" fontWeight={600} gutterBottom>
-        Attempts
-      </Typography>
+      {/* Attempts card */}
+      <Card sx={{ mt: 4 }}>
+        <CardContent sx={{ p: 3, '&:last-child': { pb: attempts.length === 0 ? 3 : 0 } }}>
+          <Typography variant="h6" fontWeight={600} sx={{ mb: attempts.length === 0 ? 1.5 : 2 }}>
+            Attempts ({attempts.length})
+          </Typography>
 
-      {attempts.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
-          No attempts yet.
-        </Typography>
-      ) : (
-        <Card variant="outlined">
-          <List disablePadding>
-            {attempts.map((attempt, index) => (
-              <Box key={attempt.id}>
-                <ListItem
-                  disableGutters
-                  sx={{ px: 3, py: 1.5, display: 'flex', gap: 2, alignItems: 'center' }}
-                  component={Link}
-                  href={`/attempts/${attempt.id}`}
-                  style={{ textDecoration: 'none', color: 'inherit' }}
-                >
-                  <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: 'primary.light', width: 36, height: 36, fontSize: 13 }}>
-                      #{attempt.attemptNumber}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={`Attempt #${attempt.attemptNumber}`}
-                    secondary={new Date(attempt.submittedAt).toLocaleString()}
-                  />
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
-                    <SubmissionStatusBadge status={attempt.status} />
-                    {attempt.score != null && (
-                      <Chip label={`${attempt.score} pts`} size="small" variant="outlined" />
-                    )}
-                  </Box>
-                </ListItem>
-                {index < attempts.length - 1 && <Divider />}
-              </Box>
-            ))}
-          </List>
-        </Card>
-      )}
+          {attempts.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No attempts yet.
+            </Typography>
+          ) : (
+            <List disablePadding sx={{ mx: -3 }}>
+              {attempts.map((attempt, index) => (
+                <Box key={attempt.id}>
+                  {index === 0 && <Divider />}
+                  <ListItem
+                    disableGutters
+                    sx={{ px: 3, py: 1.5, display: 'flex', gap: 2, alignItems: 'center' }}
+                    component={Link}
+                    href={`/attempts/${attempt.id}`}
+                    style={{ textDecoration: 'none', color: 'inherit' }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar
+                        sx={{ bgcolor: 'primary.light', width: 36, height: 36, fontSize: 13 }}
+                      >
+                        #{attempt.attemptNumber}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={`Attempt #${attempt.attemptNumber}`}
+                      secondary={new Date(attempt.submittedAt).toLocaleString()}
+                    />
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
+                      <SubmissionStatusBadge status={attempt.status} />
+                      {attempt.score != null && (
+                        <Chip label={`${attempt.score} pts`} size="small" variant="outlined" />
+                      )}
+                    </Box>
+                  </ListItem>
+                  <Divider />
+                </Box>
+              ))}
+            </List>
+          )}
+        </CardContent>
+      </Card>
     </Box>
   );
 }

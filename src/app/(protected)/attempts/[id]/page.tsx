@@ -53,31 +53,39 @@ export default function AttemptStatusPage({ params }: { params: { id: string } }
 
   return (
     <Box sx={{ p: 4 }}>
-      <Button
-        onClick={() => router.back()}
-        startIcon={<ArrowBackIcon />}
-        variant="text"
-        color="inherit"
-        sx={{ mb: 3 }}
-      >
-        Back
-      </Button>
+      <Card>
+        {/* Toolbar row */}
+        <CardContent
+          sx={{
+            py: 1.5,
+            px: 3,
+            '&:last-child': { pb: 1.5 },
+          }}
+        >
+          <Button
+            onClick={() => router.back()}
+            startIcon={<ArrowBackIcon />}
+            variant="text"
+            color="inherit"
+            size="small"
+          >
+            Back
+          </Button>
+        </CardContent>
+        <Divider />
 
-      <Typography variant="h5" fontWeight={600} gutterBottom>
-        Attempt #{status?.attemptNumber ?? '…'}
-      </Typography>
-
-      {error != null && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-
-      <Card variant="outlined">
+        {/* Hero + status */}
         <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Typography variant="subtitle1" fontWeight={600}>
-              Status
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              mb: status?.score != null ? 2 : 0,
+            }}
+          >
+            <Typography variant="h4" fontWeight={600}>
+              Attempt #{status?.attemptNumber ?? '…'}
             </Typography>
             {isLoading && status == null ? (
               <CircularProgress size={20} />
@@ -92,15 +100,26 @@ export default function AttemptStatusPage({ params }: { params: { id: string } }
           </Box>
 
           {status?.score != null && (
-            <Box sx={{ mb: 2 }}>
-              <Chip label={`Score: ${status.score} pts`} color="primary" variant="outlined" />
-            </Box>
+            <Chip label={`Score: ${status.score} pts`} color="primary" variant="outlined" />
           )}
+        </CardContent>
 
-          {status?.pipelineOutput ? (
-            <>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+        {/* Pipeline output section */}
+        {status?.pipelineOutput ? (
+          <>
+            <Divider />
+            <CardContent sx={{ p: 3 }}>
+              <Typography
+                variant="overline"
+                sx={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  color: 'text.secondary',
+                  mb: 1.5,
+                  display: 'block',
+                }}
+              >
                 Pipeline output
               </Typography>
               <Box
@@ -117,18 +136,30 @@ export default function AttemptStatusPage({ params }: { params: { id: string } }
                   overflowY: 'auto',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
+                  m: 0,
                 }}
               >
                 {status.pipelineOutput}
               </Box>
-            </>
-          ) : status != null && TERMINAL_STATUSES.includes(status.status) ? (
-            <Typography variant="body2" color="text.secondary">
-              No pipeline output available.
-            </Typography>
-          ) : null}
-        </CardContent>
+            </CardContent>
+          </>
+        ) : status != null && TERMINAL_STATUSES.includes(status.status) ? (
+          <>
+            <Divider />
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                No pipeline output available.
+              </Typography>
+            </CardContent>
+          </>
+        ) : null}
       </Card>
+
+      {error != null && (
+        <Alert severity="error" sx={{ mt: 3 }}>
+          {error}
+        </Alert>
+      )}
     </Box>
   );
 }
