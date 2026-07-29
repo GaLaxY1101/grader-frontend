@@ -29,7 +29,7 @@ const roleLabel: Record<Role, string> = {
 function getPageTitle(pathname: string): string {
   const segments = pathname.split('/').filter(Boolean);
 
-  if (segments.length === 0) return 'Dashboard';
+  if (segments.length === 0) return 'Courses';
 
   for (let i = segments.length - 1; i >= 0; i--) {
     const seg = segments[i];
@@ -40,7 +40,7 @@ function getPageTitle(pathname: string): string {
     }
   }
 
-  return 'Dashboard';
+  return 'Courses';
 }
 
 function getInitials(name: string): string {

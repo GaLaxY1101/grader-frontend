@@ -24,7 +24,7 @@ export default function SignInPage() {
         <Button
           variant="contained"
           size="large"
-          onClick={() => signIn('keycloak', { callbackUrl: '/dashboard' })}
+          onClick={() => signIn('keycloak', { callbackUrl: '/courses' })}
           sx={{ px: 6, py: 1.5 }}
         >
           Sign in with Keycloak

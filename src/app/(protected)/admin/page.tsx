@@ -12,7 +12,7 @@ export default async function AdminPage() {
   const session = await getServerSession(auth);
 
   if (!session?.roles.includes(Role.ADMIN)) {
-    redirect('/dashboard');
+    redirect('/courses');
   }
 
   let users: Awaited<ReturnType<typeof getUsers>>;

@@ -3,7 +3,6 @@
 import { navigationConfig } from '@/components/layout/navigation';
 import { type Role } from '@/utils/roles';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import SchoolIcon from '@mui/icons-material/School';
 import Avatar from '@mui/material/Avatar';
@@ -23,7 +22,6 @@ import React from 'react';
 const SIDEBAR_WIDTH = 256;
 
 const iconMap: Record<string, React.ElementType> = {
-  Dashboard: DashboardIcon,
   School: SchoolIcon,
   ManageAccounts: ManageAccountsIcon,
 };
