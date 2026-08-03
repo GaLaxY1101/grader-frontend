@@ -47,7 +47,7 @@ export const MainLayout = ({ children, userName, userEmail, role }: MainLayoutPr
           sx={{
             flexGrow: 1,
             p: 3,
-            bgcolor: 'background.default',
+            bgcolor: 'background.paper',
             overflowY: 'auto',
           }}
         >

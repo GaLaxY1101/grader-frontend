@@ -1,8 +1,17 @@
 import { createServerClient } from '@/lib/api';
 
-export const getCourses = async () => {
+export interface CoursesQuery {
+  query?: string;
+  groupId?: number;
+  page?: number;
+  size?: number;
+}
+
+export const getCourses = async (params: CoursesQuery = {}) => {
   const client = await createServerClient();
-  const { data, error } = await client.GET('/api/courses');
+  const { data, error } = await client.GET('/api/courses', {
+    params: { query: params },
+  });
 
   if (error) throw new Error('Failed to fetch courses');
   return data;

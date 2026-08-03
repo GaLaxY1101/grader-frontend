@@ -428,6 +428,17 @@ export interface components {
       /** Format: int64 */
       latestAttemptId?: number;
     };
+    PageResponseCourseResponse: {
+      content?: components['schemas']['CourseResponse'][];
+      /** Format: int32 */
+      page?: number;
+      /** Format: int32 */
+      size?: number;
+      /** Format: int64 */
+      totalElements?: number;
+      /** Format: int32 */
+      totalPages?: number;
+    };
     CourseDetailResponse: {
       /** Format: int64 */
       id?: number;
@@ -843,11 +854,23 @@ export interface operations {
     };
   };
   listCourses: {
+    parameters: {
+      query?: {
+        query?: string;
+        groupId?: number;
+        /** @description Zero-based page index (0..N) */
+        page?: number;
+        /** @description The size of the page to be returned */
+        size?: number;
+        /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+        sort?: string[];
+      };
+    };
     responses: {
       /** @description OK */
       200: {
         content: {
-          '*/*': components['schemas']['CourseResponse'][];
+          '*/*': components['schemas']['PageResponseCourseResponse'];
         };
       };
     };
@@ -1262,9 +1285,6 @@ export interface operations {
   };
   exportCourseGrades: {
     parameters: {
-      query?: {
-        format?: string;
-      };
       path: {
         courseId: number;
       };

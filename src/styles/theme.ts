@@ -38,7 +38,7 @@ export const theme = createTheme({
       primary: '#0F172A',
       secondary: '#64748B',
     },
-    divider: '#E2E8F0',
+    divider: '#CBD5E1',
   },
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
@@ -132,6 +132,7 @@ export const theme = createTheme({
         root: {
           boxShadow: '0px 1px 3px rgba(15, 23, 42, 0.08), 0px 1px 2px rgba(15, 23, 42, 0.06)',
           borderRadius: 12,
+          border: '1px solid #CBD5E1',
         },
       },
     },
@@ -182,10 +183,10 @@ export const theme = createTheme({
         root: {
           borderRadius: 8,
           '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#E2E8F0',
+            borderColor: '#CBD5E1',
           },
           '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#94A3B8',
+            borderColor: '#64748B',
           },
         },
       },
@@ -242,7 +243,7 @@ export const theme = createTheme({
     MuiDivider: {
       styleOverrides: {
         root: {
-          borderColor: '#E2E8F0',
+          borderColor: '#CBD5E1',
         },
       },
     },
