@@ -8,7 +8,6 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -18,6 +17,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useSession } from 'next-auth/react';
 import { useState } from 'react';
@@ -32,28 +32,33 @@ interface GradesTableProps {
 
 export const GradesTable = ({ courseId, gradebook }: GradesTableProps) => {
   const { data: session } = useSession();
-  const [downloading, setDownloading] = useState<null | 'csv' | 'xlsx'>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const assignments = gradebook.assignments ?? [];
   const students = gradebook.students ?? [];
 
-  const download = async (format: 'csv' | 'xlsx') => {
+  const downloadXlsx = async () => {
     if (!session?.access_token) {
       toast.error('You must be signed in to export grades');
       return;
     }
-    setDownloading(format);
+    setDownloading(true);
     try {
       const res = await fetch(
-        `${env.NEXT_PUBLIC_API_URL}/api/courses/${courseId}/grades/export?format=${format}`,
+        `${env.NEXT_PUBLIC_API_URL}/api/courses/${courseId}/grades/export?format=xlsx`,
         { headers: { Authorization: `Bearer ${session.access_token}` } },
       );
       if (!res.ok) throw new Error(`Export failed (${res.status})`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
+      const safeName =
+        (gradebook.courseName ?? `course-${courseId}`)
+          .replace(/[<>:"/\\|?*]+/g, '')
+          .trim()
+          .replace(/\s+/g, '-') || `course-${courseId}`;
       a.href = url;
-      a.download = `grades-course-${courseId}.${format}`;
+      a.download = `grades-${safeName}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -61,7 +66,7 @@ export const GradesTable = ({ courseId, gradebook }: GradesTableProps) => {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to export grades');
     } finally {
-      setDownloading(null);
+      setDownloading(false);
     }
   };
 
@@ -99,22 +104,13 @@ export const GradesTable = ({ courseId, gradebook }: GradesTableProps) => {
           </Box>
           <Stack direction="row" spacing={1}>
             <Button
-              variant="outlined"
-              size="small"
-              startIcon={downloading === 'csv' ? <CircularProgress size={14} /> : <DownloadIcon />}
-              onClick={() => download('csv')}
-              disabled={downloading !== null}
-            >
-              CSV
-            </Button>
-            <Button
               variant="contained"
               size="small"
-              startIcon={downloading === 'xlsx' ? <CircularProgress size={14} /> : <DownloadIcon />}
-              onClick={() => download('xlsx')}
-              disabled={downloading !== null}
+              startIcon={downloading ? <CircularProgress size={14} /> : <DownloadIcon />}
+              onClick={downloadXlsx}
+              disabled={downloading}
             >
-              Excel
+              Export
             </Button>
           </Stack>
         </Box>
@@ -128,14 +124,28 @@ export const GradesTable = ({ courseId, gradebook }: GradesTableProps) => {
                 <TableRow sx={{ backgroundColor: 'action.hover' }}>
                   <TableCell sx={{ fontWeight: 600 }}>Student</TableCell>
                   {assignments.map((a) => (
-                    <TableCell key={a.id} align="center" sx={{ fontWeight: 600 }}>
-                      {a.title}
+                    <TableCell key={a.id} align="center" sx={{ fontWeight: 600, maxWidth: 140 }}>
+                      <Tooltip title={a.title ?? ''} placement="top" arrow>
+                        <Typography
+                          component="span"
+                          sx={{
+                            display: 'block',
+                            fontWeight: 600,
+                            fontSize: 'inherit',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {a.title}
+                        </Typography>
+                      </Tooltip>
                       <Typography
                         component="span"
                         variant="caption"
                         sx={{ display: 'block', color: 'text.secondary', fontWeight: 400 }}
                       >
-                        /{a.maxScore}
+                        /{a.maxScore ?? 0}
                       </Typography>
                     </TableCell>
                   ))}
@@ -166,28 +176,9 @@ export const GradesTable = ({ courseId, gradebook }: GradesTableProps) => {
                       </TableCell>
                       {assignments.map((a) => {
                         const cell = gradesById.get(a.id);
-                        if (cell?.grade != null) {
-                          return (
-                            <TableCell key={a.id} align="center">
-                              {cell.grade}
-                            </TableCell>
-                          );
-                        }
-                        if (cell?.status != null) {
-                          return (
-                            <TableCell key={a.id} align="center">
-                              <Chip
-                                label={cell.status}
-                                size="small"
-                                variant="outlined"
-                                sx={{ fontSize: '0.6875rem' }}
-                              />
-                            </TableCell>
-                          );
-                        }
                         return (
-                          <TableCell key={a.id} align="center" sx={{ color: 'text.disabled' }}>
-                            —
+                          <TableCell key={a.id} align="center">
+                            {cell?.grade ?? 0}
                           </TableCell>
                         );
                       })}
