@@ -16,7 +16,7 @@ export const EditAssignmentButton = ({ assignment }: EditAssignmentButtonProps) 
 
   return (
     <>
-      <Button variant="outlined" onClick={() => setOpen(true)}>
+      <Button variant="contained" onClick={() => setOpen(true)}>
         Edit Assignment
       </Button>
       <EditAssignmentDialog assignment={assignment} open={open} onClose={() => setOpen(false)} />

@@ -77,7 +77,7 @@ export const CompilationErrorDialog = ({ open, output, onClose }: CompilationErr
             </Typography>
             <Button
               size="small"
-              variant="outlined"
+              variant="contained"
               color={copied ? 'success' : 'inherit'}
               startIcon={
                 copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />

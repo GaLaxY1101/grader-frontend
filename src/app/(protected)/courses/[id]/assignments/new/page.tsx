@@ -212,7 +212,7 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
           >
             <Button
               startIcon={<ArrowBackIcon />}
-              variant="text"
+              variant="contained"
               color="inherit"
               size="small"
               onClick={() => router.push(`/courses/${courseId}`)}
@@ -576,7 +576,8 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
               <Button
-                variant="text"
+                variant="contained"
+                color="inherit"
                 disabled={submitting}
                 onClick={() => router.push(`/courses/${courseId}`)}
               >

@@ -63,7 +63,7 @@ export default async function CourseAssignmentsTab({ params }: { params: { id: s
             <Button
               component={Link}
               href={`/courses/${courseId}/assignments/new`}
-              variant="outlined"
+              variant="contained"
               size="small"
             >
               + Add

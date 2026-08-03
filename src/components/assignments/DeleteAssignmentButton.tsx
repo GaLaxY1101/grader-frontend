@@ -52,7 +52,7 @@ export const DeleteAssignmentButton = ({
 
   return (
     <>
-      <Button variant="outlined" color="error" onClick={() => setOpen(true)}>
+      <Button variant="contained" color="error" onClick={() => setOpen(true)}>
         Delete
       </Button>
 

@@ -51,7 +51,7 @@ export default async function SubmissionDetailPage({ params }: { params: { id: s
             component={Link}
             href={`/courses`}
             startIcon={<ArrowBackIcon />}
-            variant="text"
+            variant="contained"
             color="inherit"
             size="small"
           >

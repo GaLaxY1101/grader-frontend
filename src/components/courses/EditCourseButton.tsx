@@ -16,7 +16,7 @@ export const EditCourseButton = ({ course }: EditCourseButtonProps) => {
 
   return (
     <>
-      <Button variant="outlined" onClick={() => setOpen(true)}>
+      <Button variant="contained" onClick={() => setOpen(true)}>
         Edit Course
       </Button>
       <EditCourseDialog course={course} open={open} onClose={() => setOpen(false)} />

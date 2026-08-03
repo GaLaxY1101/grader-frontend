@@ -61,7 +61,7 @@ export default async function CourseTabsLayout({ children, params }: CourseTabsL
             component={Link}
             href="/courses"
             startIcon={<ArrowBackIcon />}
-            variant="text"
+            variant="contained"
             color="inherit"
             size="small"
           >

@@ -104,7 +104,7 @@ export default async function AssignmentDetailPage({
             component={Link}
             href={`/courses/${courseId}`}
             startIcon={<ArrowBackIcon />}
-            variant="text"
+            variant="contained"
             color="inherit"
             size="small"
           >
@@ -224,7 +224,7 @@ export default async function AssignmentDetailPage({
                   component={Link}
                   href={`/submissions/${mySubmission.id}`}
                   size="small"
-                  variant="text"
+                  variant="contained"
                   sx={{ ml: 'auto' }}
                 >
                   View attempts

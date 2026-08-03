@@ -65,7 +65,7 @@ export default function AttemptStatusPage({ params }: { params: { id: string } }
           <Button
             onClick={() => router.back()}
             startIcon={<ArrowBackIcon />}
-            variant="text"
+            variant="contained"
             color="inherit"
             size="small"
           >

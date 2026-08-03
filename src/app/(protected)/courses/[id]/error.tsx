@@ -18,7 +18,7 @@ export default function CourseDetailError({ error, reset }: CourseDetailErrorPro
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
         {error.message}
       </Typography>
-      <Button onClick={reset} variant="outlined" sx={{ mt: 3 }}>
+      <Button onClick={reset} variant="contained" sx={{ mt: 3 }}>
         Try again
       </Button>
     </Box>

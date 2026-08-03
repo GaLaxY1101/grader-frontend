@@ -164,7 +164,13 @@ export const SubmissionForm = ({
           >
             Submit
           </LoadingButton>
-          <Button variant="outlined" size="small" onClick={handleFormat} disabled={isSubmitting}>
+          <Button
+            variant="contained"
+            size="small"
+            color="inherit"
+            onClick={handleFormat}
+            disabled={isSubmitting}
+          >
             Format Code
           </Button>
         </Box>

@@ -15,7 +15,7 @@ export default function AssignmentDetailError({
     <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Alert severity="error">{error.message || 'Failed to load assignment.'}</Alert>
       <Box>
-        <Button variant="outlined" onClick={reset}>
+        <Button variant="contained" onClick={reset}>
           Try again
         </Button>
       </Box>

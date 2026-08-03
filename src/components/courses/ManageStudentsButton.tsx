@@ -17,7 +17,7 @@ export const ManageStudentsButton = ({ courseId, enrolledStudents }: ManageStude
 
   return (
     <>
-      <Button variant="outlined" size="small" onClick={() => setOpen(true)}>
+      <Button variant="contained" size="small" onClick={() => setOpen(true)}>
         Manage Students
       </Button>
       <ManageStudentsDialog
