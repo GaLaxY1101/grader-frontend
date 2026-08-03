@@ -276,7 +276,11 @@ export default async function AssignmentDetailPage({
             <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
               Submissions ({allSubmissions.length})
             </Typography>
-            <SubmissionList submissions={allSubmissions} />
+            <SubmissionList
+              submissions={allSubmissions}
+              maxScore={assignment?.maxScore ?? null}
+              canGrade={canManage}
+            />
           </CardContent>
         </Card>
       )}

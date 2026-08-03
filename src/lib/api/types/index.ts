@@ -77,6 +77,9 @@ export interface paths {
   '/api/assignments/{assignmentId}/compile': {
     post: operations['validateSubmissionCompilation'];
   };
+  '/api/submissions/{id}/grade': {
+    patch: operations['updateGrade'];
+  };
   '/api/v1/teachers/{id}': {
     get: operations['getTeacher'];
     delete: operations['deleteTeacher'];
@@ -102,6 +105,15 @@ export interface paths {
   };
   '/api/courses/{id}/students': {
     get: operations['listStudents_2'];
+  };
+  '/api/courses/{courseId}/submissions/my': {
+    get: operations['listMySubmissionsInCourse'];
+  };
+  '/api/courses/{courseId}/grades': {
+    get: operations['getCourseGrades'];
+  };
+  '/api/courses/{courseId}/grades/export': {
+    get: operations['exportCourseGrades'];
   };
   '/api/attempts/{attemptId}/status': {
     get: operations['getAttemptStatus'];
@@ -375,6 +387,10 @@ export interface components {
       /** Format: date-time */
       updatedAt?: string;
     };
+    UpdateGradeRequest: {
+      /** Format: int32 */
+      grade?: number;
+    };
     SubmissionResponse: {
       /** Format: int64 */
       id?: number;
@@ -389,6 +405,8 @@ export interface components {
       score?: number;
       /** Format: int32 */
       bestScore?: number;
+      /** Format: int32 */
+      grade?: number;
       /** Format: int32 */
       attemptCount?: number;
       /** Format: int64 */
@@ -425,6 +443,40 @@ export interface components {
       teachers?: components['schemas']['CourseTeacherResponse'][];
       students?: components['schemas']['EnrolledStudentResponse'][];
       assignments?: components['schemas']['AssignmentResponse'][];
+    };
+    AssignmentGradeSummary: {
+      /** Format: int64 */
+      id?: number;
+      title?: string;
+      /** Format: int32 */
+      maxScore?: number;
+    };
+    CourseGradesResponse: {
+      /** Format: int64 */
+      courseId?: number;
+      courseName?: string;
+      assignments?: components['schemas']['AssignmentGradeSummary'][];
+      students?: components['schemas']['StudentGradesRow'][];
+    };
+    StudentGradeCell: {
+      /** Format: int64 */
+      assignmentId?: number;
+      /** Format: int32 */
+      grade?: number;
+      /** @enum {string} */
+      status?: 'PENDING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR';
+    };
+    StudentGradesRow: {
+      /** Format: int64 */
+      studentId?: number;
+      email?: string;
+      firstName?: string;
+      lastName?: string;
+      grades?: components['schemas']['StudentGradeCell'][];
+      /** Format: int32 */
+      total?: number;
+      /** Format: int32 */
+      maxTotal?: number;
     };
     AttemptStatusResponse: {
       /** Format: int64 */
@@ -1012,6 +1064,26 @@ export interface operations {
       };
     };
   };
+  updateGrade: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateGradeRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['SubmissionResponse'];
+        };
+      };
+    };
+  };
   getTeacher: {
     parameters: {
       path: {
@@ -1154,6 +1226,54 @@ export interface operations {
       200: {
         content: {
           '*/*': components['schemas']['EnrolledStudentResponse'][];
+        };
+      };
+    };
+  };
+  listMySubmissionsInCourse: {
+    parameters: {
+      path: {
+        courseId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['SubmissionResponse'][];
+        };
+      };
+    };
+  };
+  getCourseGrades: {
+    parameters: {
+      path: {
+        courseId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['CourseGradesResponse'];
+        };
+      };
+    };
+  };
+  exportCourseGrades: {
+    parameters: {
+      query?: {
+        format?: string;
+      };
+      path: {
+        courseId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': string;
         };
       };
     };

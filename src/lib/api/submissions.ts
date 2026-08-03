@@ -8,6 +8,7 @@ export interface SubmissionResponse {
   status: 'PENDING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR';
   score: number | null;
   bestScore: number | null;
+  grade: number | null;
   attemptCount: number;
   latestAttemptId: number | null;
   createdAt: string;
@@ -58,6 +59,16 @@ export const listSubmissionsByAssignment = async (
     params: { path: { assignmentId } },
   });
   if (error) throw new Error('Failed to fetch submissions');
+  return (data ?? []) as SubmissionResponse[];
+};
+
+export const listMyCourseSubmissions = async (courseId: number): Promise<SubmissionResponse[]> => {
+  const client = await createServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (client as any).GET('/api/courses/{courseId}/submissions/my', {
+    params: { path: { courseId } },
+  });
+  if (error) return [];
   return (data ?? []) as SubmissionResponse[];
 };
 

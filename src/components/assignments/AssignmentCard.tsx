@@ -12,6 +12,7 @@ type AssignmentResponse = components['schemas']['AssignmentResponse'];
 
 interface AssignmentCardProps {
   assignment: AssignmentResponse;
+  myGrade?: number | null;
 }
 
 type DeadlineStatus = 'overdue' | 'urgent' | 'upcoming';
@@ -39,13 +40,18 @@ const deadlineStyles: Record<DeadlineStatus, { color: string; bg: string; label:
   upcoming: { color: '#0369A1', bg: '#F0F9FF', label: 'Upcoming' },
 };
 
-export const AssignmentCard = ({ assignment }: AssignmentCardProps) => {
+export const AssignmentCard = ({ assignment, myGrade }: AssignmentCardProps) => {
   const status = getDeadlineStatus(assignment.deadline);
   const deadlineLabel = formatDeadline(assignment.deadline);
 
   const hasCodeCheck = assignment.programmingTask != null;
 
   const style = status != null ? deadlineStyles[status] : null;
+
+  const maxScore = assignment.maxScore ?? 0;
+  const showGrade = myGrade !== undefined;
+  const gradeValue = myGrade ?? 0;
+  const scoreLabel = showGrade ? `${gradeValue}/${maxScore}` : `${maxScore} pts`;
 
   return (
     <Box
@@ -97,7 +103,7 @@ export const AssignmentCard = ({ assignment }: AssignmentCardProps) => {
               {assignment.title ?? '—'}
             </Typography>
             <Chip
-              label={`${assignment.maxScore ?? 0} pts`}
+              label={scoreLabel}
               size="small"
               sx={{
                 flexShrink: 0,

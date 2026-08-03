@@ -415,3 +415,30 @@ const { data, error } = await client.GET('/api/courses');
 - Deterministic accent colors per course ID (id % 6) means cards look varied without random flicker on re-render
 - `backdrop-filter: blur(8px)` on Topbar gives a modern glass feel that stays readable
 - `pnpm tsc --noEmit` passes with zero errors after all changes
+
+---
+
+## 2026-07-29 — Grades feature
+
+### Done
+- **BE V18 migration** adds `submission.grade INTEGER NULL` (`grader/src/main/resources/db/migration/V18__add_grade_to_submissions.sql`).
+- **BE auto-grade in `Submission.updateFromAttempt`** — on first `PASSED`, `grade` defaults to `bestScore`. Never overwrites a non-null grade so teacher overrides survive future auto-runs.
+- **BE PATCH `/api/submissions/{id}/grade`** — teacher/admin only, validates `0..maxScore` (`SubmissionController` + `SubmissionServiceImpl.updateGrade`).
+- **BE GET `/api/courses/{courseId}/grades`** — new `GradesService` returns the assignments × students matrix + per-row `total` and `maxTotal`.
+- **BE GET `/api/courses/{courseId}/grades/export?format=csv|xlsx`** — `GradesCsvWriter` (UTF-8 CSV) and `GradesXlsxWriter` (Apache POI, single sheet, bold header, auto-filter, auto-sized columns).
+- **SecurityConfig** — added `PATCH` to CORS allowed methods (was missing).
+- **GlobalExceptionHandler** — added `IllegalArgumentException` → 400 handler.
+- **FE tabs refactor** — `courses/[id]/(tabs)/layout.tsx` renders the header + `Assignments | Grades` tab bar; `courses/[id]/(tabs)/page.tsx` is the assignments tab; `courses/[id]/(tabs)/grades/page.tsx` is the new grades tab. Assignment detail stays outside the group so no tabs appear there. Old `courses/[id]/page.tsx` deleted.
+- **FE `SubmissionList`** — teacher-only inline grade `TextField` (`SubmissionGradeInput`) with 500 ms debounced `PATCH`; row navigation split from the input zone.
+- **FE grades table** — sortable students × assignments matrix, `Total` column shows `340 / 500 (68%)`, `CSV` and `Excel` export buttons (client-side blob download with JWT).
+- **FE API layer** — `src/lib/api/grades.ts` wraps the new endpoint; `SubmissionResponse.grade` added.
+- **Types regenerated** — `pnpm generate-api` picks up the new endpoints and the `grade` field.
+
+### Decisions
+- **Auto-grade only for code-check `PASSED`** — file uploads and `FAILED`/`ERROR` leave `grade` null so the teacher can decide (partial credit etc.).
+- **Grades tab location** — nested inside the course page via route group `(tabs)`; keeps the URL clean (`/courses/[id]/grades`) while sharing the course header layout.
+- **Total display** — backend returns raw sum + max; frontend derives the percentage. Grade values themselves stay integer.
+- **XLSX via Apache POI 5.4.0** — well-supported, no external service needed; single sheet per course.
+
+### Next
+- Manual smoke test in browser (dev server): as TEACHER set a grade → see it in gradebook → export CSV/XLSX opens correctly. Auto-populate check: STUDENT submits code-check → after `PASSED`, grade auto-set to `bestScore`.
