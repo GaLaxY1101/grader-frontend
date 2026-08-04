@@ -3,6 +3,7 @@ import { createServerClient } from '@/lib/api';
 export interface CoursesQuery {
   query?: string;
   groupId?: number;
+  isActive?: boolean;
   page?: number;
   size?: number;
 }

@@ -63,6 +63,9 @@ export interface paths {
     post: operations['enrollGroup'];
     delete: operations['unenrollGroup'];
   };
+  '/api/courses/{id}/activate': {
+    post: operations['activateCourse'];
+  };
   '/api/courses/{courseId}/assignments': {
     get: operations['listAssignments'];
     post: operations['createAssignment'];
@@ -858,6 +861,7 @@ export interface operations {
       query?: {
         query?: string;
         groupId?: number;
+        isActive?: boolean;
         /** @description Zero-based page index (0..N) */
         page?: number;
         /** @description The size of the page to be returned */
@@ -979,6 +983,19 @@ export interface operations {
         content: {
           '*/*': number[];
         };
+      };
+    };
+  };
+  activateCourse: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: never;
       };
     };
   };

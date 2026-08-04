@@ -4,17 +4,17 @@ import { Role } from '@/utils/roles';
 import { getServerSession } from 'next-auth';
 
 function getSubtitle(roles: string[]): string {
-  if (roles.includes(Role.ADMIN)) return 'All courses';
-  if (roles.includes(Role.TEACHER)) return 'Courses you teach';
-  return 'Your enrolled courses';
+  if (roles.includes(Role.ADMIN)) return 'All archived courses';
+  if (roles.includes(Role.TEACHER)) return 'Courses you have archived';
+  return 'Your past courses';
 }
 
 function getEmptyDescription(roles: string[]): string {
-  if (roles.includes(Role.TEACHER)) return "You haven't created any courses yet";
-  return 'You are not enrolled in any courses yet';
+  if (roles.includes(Role.TEACHER)) return "You haven't archived any courses yet";
+  return 'You have no past courses yet';
 }
 
-interface CoursesPageProps {
+interface ArchivePageProps {
   searchParams: {
     query?: string;
     groupId?: string;
@@ -33,18 +33,17 @@ function parseGroupId(raw: string | undefined): number | null {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
 }
 
-export default async function CoursesPage({ searchParams }: CoursesPageProps) {
+export default async function ArchivePage({ searchParams }: ArchivePageProps) {
   const session = await getServerSession(auth);
   const roles = session?.roles ?? [];
-  const canCreate = roles.includes(Role.TEACHER) || roles.includes(Role.ADMIN);
 
   return (
     <CoursesPageBody
-      isActive
-      title="Courses"
+      isActive={false}
+      title="Archive"
       subtitle={getSubtitle(roles)}
       emptyDescription={getEmptyDescription(roles)}
-      canCreate={canCreate}
+      canCreate={false}
       query={searchParams.query ?? ''}
       groupId={parseGroupId(searchParams.groupId)}
       page={parsePage(searchParams.page)}

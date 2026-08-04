@@ -1,7 +1,9 @@
+import { ArchiveCourseButton } from '@/components/courses/ArchiveCourseButton';
 import { CourseInfoCard } from '@/components/courses/CourseInfoCard';
 import { CourseTabs } from '@/components/courses/CourseTabs';
 import { EditCourseButton } from '@/components/courses/EditCourseButton';
 import { ManageStudentsButton } from '@/components/courses/ManageStudentsButton';
+import { RestoreCourseButton } from '@/components/courses/RestoreCourseButton';
 import { getCourseById, getCourseStudents } from '@/lib/api/courses';
 import { auth } from '@/lib/server/auth';
 import { Role } from '@/utils/roles';
@@ -67,10 +69,17 @@ export default async function CourseTabsLayout({ children, params }: CourseTabsL
           >
             Back to courses
           </Button>
-          {canManage && (
+          {canManage && course != null && (
             <Stack direction="row" spacing={1}>
-              <ManageStudentsButton courseId={courseId} enrolledStudents={studentList} />
-              {course != null && <EditCourseButton course={course} />}
+              {course.isActive ? (
+                <>
+                  <ManageStudentsButton courseId={courseId} enrolledStudents={studentList} />
+                  <EditCourseButton course={course} />
+                  <ArchiveCourseButton courseId={courseId} courseName={course.name ?? ''} />
+                </>
+              ) : (
+                <RestoreCourseButton courseId={courseId} />
+              )}
             </Stack>
           )}
         </CardContent>

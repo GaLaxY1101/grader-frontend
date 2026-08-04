@@ -2,6 +2,7 @@
 
 import { navigationConfig } from '@/components/layout/navigation';
 import { type Role } from '@/utils/roles';
+import ArchiveIcon from '@mui/icons-material/Archive';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import SchoolIcon from '@mui/icons-material/School';
@@ -23,6 +24,7 @@ const SIDEBAR_WIDTH = 256;
 
 const iconMap: Record<string, React.ElementType> = {
   School: SchoolIcon,
+  Archive: ArchiveIcon,
   ManageAccounts: ManageAccountsIcon,
 };
 
