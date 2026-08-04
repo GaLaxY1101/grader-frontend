@@ -30,6 +30,7 @@ import { z } from 'zod';
 
 type StudentResponse = components['schemas']['StudentResponse'];
 type GroupResponse = components['schemas']['GroupResponse'];
+type CourseTemplateResponse = components['schemas']['CourseTemplateResponse'];
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -50,10 +51,13 @@ export const CreateCourseDialog = ({ open, onClose }: CreateCourseDialogProps) =
   const [submitting, setSubmitting] = useState(false);
   const [allGroups, setAllGroups] = useState<GroupResponse[]>([]);
   const [allStudents, setAllStudents] = useState<StudentResponse[]>([]);
+  const [allTemplates, setAllTemplates] = useState<CourseTemplateResponse[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [loadingStudents, setLoadingStudents] = useState(false);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [selectedGroups, setSelectedGroups] = useState<GroupResponse[]>([]);
   const [selectedStudents, setSelectedStudents] = useState<StudentResponse[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<CourseTemplateResponse | null>(null);
 
   const {
     register,
@@ -73,6 +77,7 @@ export const CreateCourseDialog = ({ open, onClose }: CreateCourseDialogProps) =
     if (!open) return;
     setLoadingGroups(true);
     setLoadingStudents(true);
+    setLoadingTemplates(true);
     apiClient.GET('/api/groups').then(({ data, error }) => {
       if (error) toast.error('Failed to load groups');
       else setAllGroups(data ?? []);
@@ -83,6 +88,13 @@ export const CreateCourseDialog = ({ open, onClose }: CreateCourseDialogProps) =
       else setAllStudents(data ?? []);
       setLoadingStudents(false);
     });
+    apiClient
+      .GET('/api/templates', { params: { query: { size: 100 } } })
+      .then(({ data, error }) => {
+        if (error) toast.error('Failed to load templates');
+        else setAllTemplates(data?.content ?? []);
+        setLoadingTemplates(false);
+      });
   }, [open]);
 
   const selectedGroupIds = useMemo(
@@ -108,6 +120,7 @@ export const CreateCourseDialog = ({ open, onClose }: CreateCourseDialogProps) =
     reset();
     setSelectedGroups([]);
     setSelectedStudents([]);
+    setSelectedTemplate(null);
     onClose();
   };
 
@@ -120,6 +133,7 @@ export const CreateCourseDialog = ({ open, onClose }: CreateCourseDialogProps) =
           description: data.description || undefined,
           academicYear: data.academicYear,
           semester: data.semester,
+          templateId: selectedTemplate?.id ?? undefined,
         },
       });
 
@@ -219,6 +233,46 @@ export const CreateCourseDialog = ({ open, onClose }: CreateCourseDialogProps) =
                 <FormHelperText>{errors.semester.message}</FormHelperText>
               )}
             </FormControl>
+
+            <Divider textAlign="left">
+              <Typography variant="caption" color="text.secondary">
+                Template (optional)
+              </Typography>
+            </Divider>
+
+            <Box>
+              <Autocomplete
+                options={allTemplates}
+                loading={loadingTemplates}
+                value={selectedTemplate}
+                onChange={(_, v) => setSelectedTemplate(v)}
+                getOptionLabel={(o) => o.name ?? ''}
+                isOptionEqualToValue={(a, b) => a.id === b.id}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Create from template"
+                    placeholder="Blank course (no template)"
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingTemplates && <CircularProgress color="inherit" size={16} />}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+              />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mt: 0.5 }}
+              >
+                Assignments from the template will be copied into the new course.
+              </Typography>
+            </Box>
 
             <Divider textAlign="left">
               <Typography variant="caption" color="text.secondary">

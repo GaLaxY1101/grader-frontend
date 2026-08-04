@@ -23,15 +23,19 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 
-type AssignmentResponse = components['schemas']['AssignmentResponse'];
+type TemplateAssignmentResponse = components['schemas']['TemplateAssignmentResponse'];
 
-interface EditAssignmentDialogProps {
-  assignment: AssignmentResponse;
+interface EditTemplateAssignmentDialogProps {
+  assignment: TemplateAssignmentResponse;
   open: boolean;
   onClose: () => void;
 }
 
-export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignmentDialogProps) => {
+export const EditTemplateAssignmentDialog = ({
+  assignment,
+  open,
+  onClose,
+}: EditTemplateAssignmentDialogProps) => {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [compileError, setCompileError] = useState<string | null>(null);
@@ -57,7 +61,7 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
 
     if (hadCodeCheck && !data.enableCodeCheck) {
       const confirmed = window.confirm(
-        'This will delete the existing code check configuration (function signature, test cases, etc.). Continue?',
+        'This will delete the existing code check configuration. Continue?',
       );
       if (!confirmed) return;
     }
@@ -70,13 +74,12 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
         return;
       }
 
-      const { error } = await apiClient.PUT('/api/assignments/{id}', {
+      const { error } = await apiClient.PUT('/api/template-assignments/{id}', {
         params: { path: { id: assignment.id } },
         body: {
           title: data.title,
           description: data.description || undefined,
           maxScore: data.maxScore,
-          deadline: data.deadline || undefined,
           programmingTask: buildProgrammingTaskPayload(data),
         },
       });
@@ -99,13 +102,11 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
   return (
     <>
       <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
-        <DialogTitle>Edit Assignment</DialogTitle>
-
+        <DialogTitle>Edit Template Assignment</DialogTitle>
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
           <DialogContent>
-            <AssignmentFormFields form={form} showDeadline />
+            <AssignmentFormFields form={form} showDeadline={false} />
           </DialogContent>
-
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={handleClose} disabled={submitting}>
               Cancel

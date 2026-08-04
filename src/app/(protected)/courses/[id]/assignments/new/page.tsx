@@ -1,10 +1,16 @@
 'use client';
 
+import { AssignmentFormFields } from '@/components/assignments/AssignmentFormFields';
+import {
+  assignmentFormSchema,
+  buildProgrammingTaskPayload,
+  emptyFormDefaults,
+  type AssignmentFormValues,
+} from '@/components/assignments/assignmentFormSchema';
+import { runCompileCheck } from '@/components/assignments/useAssignmentCompileCheck';
 import { CompilationErrorDialog } from '@/components/common/CompilationErrorDialog';
 import { apiClient } from '@/lib/api/client';
-import { formatCpp } from '@/utils/formatCpp';
 import { zodResolver } from '@hookform/resolvers/zod';
-import Editor from '@monaco-editor/react';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { LoadingButton } from '@mui/lab';
 import Box from '@mui/material/Box';
@@ -12,81 +18,14 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Divider from '@mui/material/Divider';
-import FormControl from '@mui/material/FormControl';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
-import FormLabel from '@mui/material/FormLabel';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
-import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/navigation';
-import { useCallback, useRef, useState } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
-import { z } from 'zod';
-
-const testCaseSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  testType: z.enum(['IO', 'EXCEPTION']),
-  input: z.string().optional(),
-  expectedOutput: z.string().optional(),
-});
-
-const schema = z
-  .object({
-    title: z.string().min(1, 'Title is required'),
-    description: z.string().optional(),
-    maxScore: z.number().min(1, 'Min 1').max(1000, 'Max 1000'),
-    deadline: z.string().optional(),
-    enableCodeCheck: z.boolean(),
-    language: z.enum(['C', 'CPP']).optional(),
-    testMode: z.enum(['IO', 'UNIT_TEST']).optional(),
-    functionSignature: z.string().optional(),
-    testFileContent: z.string().optional(),
-    testCases: z.array(testCaseSchema).optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (!data.enableCodeCheck) return;
-    if (!data.language) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Language is required for code tasks',
-        path: ['language'],
-      });
-    }
-    if (!data.functionSignature?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Function signature is required',
-        path: ['functionSignature'],
-      });
-    }
-    if (data.testMode === 'UNIT_TEST') {
-      if (data.language !== 'CPP') {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Unit test mode requires C++',
-          path: ['language'],
-        });
-      }
-      if (!data.testFileContent?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Test file content is required for unit test mode',
-          path: ['testFileContent'],
-        });
-      }
-    }
-  });
-
-type CreateAssignmentFormData = z.infer<typeof schema>;
 
 export default function NewAssignmentPage({ params }: { params: { id: string } }) {
   const courseId = Number(params.id);
@@ -94,65 +33,18 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
   const [submitting, setSubmitting] = useState(false);
   const [compileError, setCompileError] = useState<string | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<CreateAssignmentFormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      enableCodeCheck: false,
-      testMode: 'IO',
-      maxScore: 100,
-      testCases: [],
-    },
+  const form = useForm<AssignmentFormValues>({
+    resolver: zodResolver(assignmentFormSchema),
+    defaultValues: emptyFormDefaults,
   });
 
-  const enableCodeCheck = watch('enableCodeCheck');
-  const testMode = watch('testMode');
-  const testCases = watch('testCases');
-
-  const { fields, append, remove } = useFieldArray({ control, name: 'testCases' });
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleTestFileUpload = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => setValue('testFileContent', e.target?.result as string);
-      reader.readAsText(file);
-      event.target.value = '';
-    },
-    [setValue],
-  );
-
-  const onSubmit = async (data: CreateAssignmentFormData) => {
+  const onSubmit = async (data: AssignmentFormValues) => {
     setSubmitting(true);
     try {
-      if (data.enableCodeCheck && data.functionSignature) {
-        const { data: compileResult, error: compileErr } = await apiClient.POST(
-          '/api/compile/validate',
-          {
-            body: {
-              solutionCode: data.functionSignature,
-              testFileContent:
-                data.testMode === 'UNIT_TEST' ? data.testFileContent || undefined : undefined,
-            },
-          },
-        );
-        if (compileErr || !compileResult) {
-          toast.error('Failed to validate compilation');
-          return;
-        }
-        if (!compileResult.success) {
-          setCompileError(compileResult.output ?? 'Unknown error');
-          return;
-        }
+      const compile = await runCompileCheck(data);
+      if (!compile.ok) {
+        if (compile.kind === 'compile_error') setCompileError(compile.output);
+        return;
       }
 
       const { error } = await apiClient.POST('/api/courses/{courseId}/assignments', {
@@ -162,25 +54,7 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
           description: data.description || undefined,
           maxScore: data.maxScore,
           deadline: data.deadline || undefined,
-          programmingTask: data.enableCodeCheck
-            ? {
-                language: data.language as 'C' | 'CPP',
-                testMode: (data.testMode as 'IO' | 'UNIT_TEST') ?? 'IO',
-                functionSignature: data.functionSignature || undefined,
-                testFileContent:
-                  data.testMode === 'UNIT_TEST' ? data.testFileContent || undefined : undefined,
-                testCases:
-                  data.testMode !== 'UNIT_TEST'
-                    ? data.testCases?.map((tc) => ({
-                        name: tc.name,
-                        testType: tc.testType as 'IO' | 'EXCEPTION',
-                        input: tc.input || undefined,
-                        expectedOutput:
-                          tc.testType === 'IO' ? tc.expectedOutput || undefined : undefined,
-                      }))
-                    : undefined,
-              }
-            : undefined,
+          programmingTask: buildProgrammingTaskPayload(data),
         },
       });
 
@@ -202,14 +76,7 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
     <>
       <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
         <Card>
-          {/* Toolbar row */}
-          <CardContent
-            sx={{
-              py: 1.5,
-              px: 3,
-              '&:last-child': { pb: 1.5 },
-            }}
-          >
+          <CardContent sx={{ py: 1.5, px: 3, '&:last-child': { pb: 1.5 } }}>
             <Button
               startIcon={<ArrowBackIcon />}
               variant="contained"
@@ -221,8 +88,6 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
             </Button>
           </CardContent>
           <Divider />
-
-          {/* Hero */}
           <CardContent sx={{ p: 3 }}>
             <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 0.5 }}>
               New Assignment
@@ -238,339 +103,15 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
           variant="outlined"
           sx={{ borderRadius: '12px', p: { xs: 2.5, sm: 4 }, mt: 4 }}
           component="form"
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={form.handleSubmit(onSubmit)}
           noValidate
         >
           <Stack spacing={2.5}>
-            <TextField
-              {...register('title')}
-              label="Title"
-              required
-              error={errors.title != null}
-              helperText={errors.title?.message}
-              fullWidth
-            />
+            <AssignmentFormFields form={form} showDeadline />
 
-            <TextField
-              {...register('description')}
-              label="Description"
-              multiline
-              rows={3}
-              fullWidth
-            />
-
-            <TextField
-              {...register('maxScore', { valueAsNumber: true })}
-              label="Max score"
-              type="number"
-              required
-              error={errors.maxScore != null}
-              helperText={errors.maxScore?.message}
-              fullWidth
-            />
-
-            <TextField
-              {...register('deadline')}
-              label="Deadline"
-              type="datetime-local"
-              InputLabelProps={{ shrink: true }}
-              fullWidth
-            />
-
-            <Divider />
-
-            <Controller
-              name="enableCodeCheck"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={field.value}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                    />
-                  }
-                  label={
-                    <Box>
-                      <Typography variant="subtitle2">Enable Code Check</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Students submit C/C++ code that is compiled and tested automatically.
-                      </Typography>
-                    </Box>
-                  }
-                />
-              )}
-            />
-
-            {enableCodeCheck && (
-              <>
-                <Controller
-                  name="language"
-                  control={control}
-                  render={({ field }) => (
-                    <FormControl fullWidth required error={errors.language != null}>
-                      <InputLabel>Language</InputLabel>
-                      <Select {...field} label="Language" value={field.value ?? ''}>
-                        <MenuItem value="C">C</MenuItem>
-                        <MenuItem value="CPP">C++</MenuItem>
-                      </Select>
-                      {errors.language && (
-                        <FormHelperText>{errors.language.message}</FormHelperText>
-                      )}
-                    </FormControl>
-                  )}
-                />
-
-                <FormControl>
-                  <FormLabel sx={{ mb: 1 }}>
-                    <Typography variant="subtitle2">Test mode</Typography>
-                  </FormLabel>
-                  <Controller
-                    name="testMode"
-                    control={control}
-                    render={({ field }) => (
-                      <RadioGroup row {...field} value={field.value ?? 'IO'}>
-                        <FormControlLabel
-                          value="IO"
-                          control={<Radio size="small" />}
-                          label="I/O Tests"
-                        />
-                        <FormControlLabel
-                          value="UNIT_TEST"
-                          control={<Radio size="small" />}
-                          label="Unit Tests"
-                        />
-                      </RadioGroup>
-                    )}
-                  />
-                </FormControl>
-
-                <Divider />
-
-                <Box
-                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <Typography variant="subtitle2">Function Signature / Template Code</Typography>
-                  <Button
-                    size="small"
-                    onClick={() =>
-                      setValue('functionSignature', formatCpp(watch('functionSignature') ?? ''))
-                    }
-                  >
-                    Format Code
-                  </Button>
-                </Box>
-                <Typography variant="caption" color="text.secondary">
-                  This code will be pre-filled in the student&apos;s editor. They implement the
-                  function body.
-                </Typography>
-                <Controller
-                  name="functionSignature"
-                  control={control}
-                  render={({ field }) => (
-                    <Box
-                      sx={{
-                        border: '1px solid',
-                        borderColor: errors.functionSignature ? 'error.main' : 'divider',
-                        borderRadius: 1,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <Editor
-                        height="300px"
-                        language="cpp"
-                        theme="vs-dark"
-                        value={field.value ?? ''}
-                        onChange={(value) => field.onChange(value ?? '')}
-                        options={{
-                          minimap: { enabled: false },
-                          fontSize: 13,
-                          tabSize: 4,
-                          lineNumbers: 'on',
-                          scrollBeyondLastLine: false,
-                        }}
-                      />
-                    </Box>
-                  )}
-                />
-                {errors.functionSignature && (
-                  <FormHelperText error>{errors.functionSignature.message}</FormHelperText>
-                )}
-
-                {testMode === 'UNIT_TEST' && (
-                  <>
-                    <Divider />
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <Typography variant="subtitle2">Test File (test.cpp)</Typography>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
-                          size="small"
-                          onClick={() =>
-                            setValue('testFileContent', formatCpp(watch('testFileContent') ?? ''))
-                          }
-                        >
-                          Format Code
-                        </Button>
-                        <Button size="small" onClick={() => fileInputRef.current?.click()}>
-                          Upload File
-                        </Button>
-                      </Box>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".cpp,.cxx,.cc,.h,.hpp"
-                        hidden
-                        onChange={handleTestFileUpload}
-                      />
-                    </Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Write assertions in main(). Use #include &quot;solution.cpp&quot; to access
-                      student code. Return 0 on success.
-                    </Typography>
-                    <Controller
-                      name="testFileContent"
-                      control={control}
-                      render={({ field }) => (
-                        <Box
-                          sx={{
-                            border: '1px solid',
-                            borderColor: errors.testFileContent ? 'error.main' : 'divider',
-                            borderRadius: 1,
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <Editor
-                            height="400px"
-                            language="cpp"
-                            theme="vs-dark"
-                            value={field.value ?? ''}
-                            onChange={(value) => field.onChange(value ?? '')}
-                            options={{
-                              minimap: { enabled: false },
-                              fontSize: 13,
-                              tabSize: 4,
-                              lineNumbers: 'on',
-                              scrollBeyondLastLine: false,
-                            }}
-                          />
-                        </Box>
-                      )}
-                    />
-                    {errors.testFileContent && (
-                      <FormHelperText error>{errors.testFileContent.message}</FormHelperText>
-                    )}
-                  </>
-                )}
-
-                {testMode !== 'UNIT_TEST' && (
-                  <>
-                    <Divider />
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <Typography variant="subtitle2">Test Cases</Typography>
-                      <Button
-                        size="small"
-                        onClick={() =>
-                          append({ name: '', testType: 'IO', input: '', expectedOutput: '' })
-                        }
-                      >
-                        + Add Test Case
-                      </Button>
-                    </Box>
-
-                    {fields.map((field, index) => (
-                      <Box
-                        key={field.id}
-                        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}
-                      >
-                        <Stack spacing={1.5}>
-                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                            <TextField
-                              {...register(`testCases.${index}.name`)}
-                              label="Test name"
-                              size="small"
-                              required
-                              error={errors.testCases?.[index]?.name != null}
-                              helperText={errors.testCases?.[index]?.name?.message}
-                              sx={{ flex: 1 }}
-                            />
-                            <Button
-                              size="small"
-                              color="error"
-                              onClick={() => remove(index)}
-                              sx={{ minWidth: 32, px: 1, mt: 0.5 }}
-                            >
-                              ✕
-                            </Button>
-                          </Box>
-
-                          <FormControl>
-                            <FormLabel>
-                              <Typography variant="caption" color="text.secondary">
-                                Test type
-                              </Typography>
-                            </FormLabel>
-                            <Controller
-                              name={`testCases.${index}.testType`}
-                              control={control}
-                              render={({ field: typeField }) => (
-                                <RadioGroup row {...typeField}>
-                                  <FormControlLabel
-                                    value="IO"
-                                    control={<Radio size="small" />}
-                                    label="IO (input / output)"
-                                  />
-                                  <FormControlLabel
-                                    value="EXCEPTION"
-                                    control={<Radio size="small" />}
-                                    label="Exception (non-zero exit)"
-                                  />
-                                </RadioGroup>
-                              )}
-                            />
-                          </FormControl>
-
-                          <TextField
-                            {...register(`testCases.${index}.input`)}
-                            label="Input"
-                            multiline
-                            rows={2}
-                            size="small"
-                            inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
-                            fullWidth
-                          />
-
-                          {testCases?.[index]?.testType === 'IO' && (
-                            <TextField
-                              {...register(`testCases.${index}.expectedOutput`)}
-                              label="Expected output"
-                              multiline
-                              rows={2}
-                              size="small"
-                              inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
-                              fullWidth
-                            />
-                          )}
-                        </Stack>
-                      </Box>
-                    ))}
-                  </>
-                )}
-              </>
+            {form.formState.errors.root != null && (
+              <FormHelperText error>{form.formState.errors.root.message}</FormHelperText>
             )}
-
-            {errors.root != null && <FormHelperText error>{errors.root.message}</FormHelperText>}
 
             <Divider />
 

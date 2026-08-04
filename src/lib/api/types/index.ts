@@ -9,6 +9,16 @@ export interface paths {
     put: operations['updateUser'];
     delete: operations['deactivateUser'];
   };
+  '/api/templates/{id}': {
+    get: operations['getTemplate'];
+    put: operations['updateTemplate'];
+    delete: operations['deleteTemplate'];
+  };
+  '/api/template-assignments/{id}': {
+    get: operations['getAssignment'];
+    put: operations['updateAssignment'];
+    delete: operations['deleteAssignment'];
+  };
   '/api/groups/{id}': {
     get: operations['getGroup'];
     put: operations['updateGroup'];
@@ -20,8 +30,8 @@ export interface paths {
     delete: operations['deactivateCourse'];
   };
   '/api/assignments/{id}': {
-    get: operations['getAssignment'];
-    put: operations['updateAssignment'];
+    get: operations['getAssignment_1'];
+    put: operations['updateAssignment_1'];
     delete: operations['deactivateAssignment'];
   };
   '/api/webhooks/gitlab': {
@@ -38,6 +48,21 @@ export interface paths {
   '/api/v1/students': {
     get: operations['listStudents'];
     post: operations['createStudent'];
+  };
+  '/api/templates': {
+    get: operations['listTemplates'];
+    post: operations['createTemplate'];
+  };
+  '/api/templates/{templateId}/shares': {
+    get: operations['listShares'];
+    post: operations['shareTemplate'];
+  };
+  '/api/templates/{templateId}/assignments': {
+    get: operations['listAssignments'];
+    post: operations['createAssignment'];
+  };
+  '/api/templates/{id}/copy': {
+    post: operations['copyTemplate'];
   };
   '/api/groups': {
     get: operations['listGroups'];
@@ -67,8 +92,8 @@ export interface paths {
     post: operations['activateCourse'];
   };
   '/api/courses/{courseId}/assignments': {
-    get: operations['listAssignments'];
-    post: operations['createAssignment'];
+    get: operations['listAssignments_1'];
+    post: operations['createAssignment_1'];
   };
   '/api/compile/validate': {
     post: operations['validateCompilation'];
@@ -86,6 +111,9 @@ export interface paths {
   '/api/v1/teachers/{id}': {
     get: operations['getTeacher'];
     delete: operations['deleteTeacher'];
+  };
+  '/api/v1/teachers/me': {
+    get: operations['getCurrentTeacher'];
   };
   '/api/v1/students/{id}': {
     get: operations['getStudent'];
@@ -124,6 +152,9 @@ export interface paths {
   '/api/assignments/{assignmentId}/submissions/my': {
     get: operations['getMySubmission'];
   };
+  '/api/templates/{templateId}/shares/{teacherId}': {
+    delete: operations['unshareTemplate'];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -152,6 +183,62 @@ export interface components {
       isActive?: boolean;
       /** Format: date-time */
       createdAt?: string;
+    };
+    UpdateCourseTemplateRequest: {
+      name: string;
+      description?: string;
+    };
+    CourseTemplateResponse: {
+      /** Format: int64 */
+      id?: number;
+      name?: string;
+      description?: string;
+      /** Format: int64 */
+      ownerId?: number;
+      ownerFullName?: string;
+      /** Format: date-time */
+      createdAt?: string;
+      /** Format: date-time */
+      updatedAt?: string;
+    };
+    ProgrammingTaskDetails: {
+      /** @enum {string} */
+      language: 'C' | 'CPP';
+      /** @enum {string} */
+      testMode?: 'IO' | 'UNIT_TEST';
+      ciConfigTemplate?: string;
+      functionSignature?: string;
+      testFileContent?: string;
+      testCases?: components['schemas']['TestCaseDetails'][];
+    };
+    TestCaseDetails: {
+      name: string;
+      /** @enum {string} */
+      testType: 'IO' | 'EXCEPTION';
+      input?: string;
+      expectedOutput?: string;
+    };
+    UpdateTemplateAssignmentRequest: {
+      title: string;
+      description?: string;
+      /** Format: int32 */
+      maxScore?: number;
+      programmingTask?: components['schemas']['ProgrammingTaskDetails'];
+    };
+    TemplateAssignmentResponse: {
+      /** Format: int64 */
+      id?: number;
+      /** Format: int64 */
+      templateId?: number;
+      title?: string;
+      description?: string;
+      /** Format: int32 */
+      maxScore?: number;
+      /** Format: date-time */
+      createdAt?: string;
+      /** Format: date-time */
+      updatedAt?: string;
+      programmingTask?: components['schemas']['ProgrammingTaskDetails'];
     };
     UpdateGroupRequest: {
       code: string;
@@ -192,23 +279,6 @@ export interface components {
       isActive?: boolean;
       /** Format: date-time */
       createdAt?: string;
-    };
-    ProgrammingTaskDetails: {
-      /** @enum {string} */
-      language: 'C' | 'CPP';
-      /** @enum {string} */
-      testMode?: 'IO' | 'UNIT_TEST';
-      ciConfigTemplate?: string;
-      functionSignature?: string;
-      testFileContent?: string;
-      testCases?: components['schemas']['TestCaseDetails'][];
-    };
-    TestCaseDetails: {
-      name: string;
-      /** @enum {string} */
-      testType: 'IO' | 'EXCEPTION';
-      input?: string;
-      expectedOutput?: string;
     };
     UpdateAssignmentRequest: {
       title: string;
@@ -303,6 +373,35 @@ export interface components {
       groupId?: number;
       groupCode?: string;
     };
+    CreateCourseTemplateRequest: {
+      name: string;
+      description?: string;
+    };
+    CreateTemplateShareRequest: {
+      /** Format: int64 */
+      teacherId: number;
+    };
+    TemplateShareResponse: {
+      /** Format: int64 */
+      id?: number;
+      /** Format: int64 */
+      templateId?: number;
+      /** Format: int64 */
+      teacherId?: number;
+      teacherEmail?: string;
+      teacherFullName?: string;
+      /** Format: int64 */
+      sharedByTeacherId?: number;
+      /** Format: date-time */
+      createdAt?: string;
+    };
+    CreateTemplateAssignmentRequest: {
+      title: string;
+      description?: string;
+      /** Format: int32 */
+      maxScore?: number;
+      programmingTask?: components['schemas']['ProgrammingTaskDetails'];
+    };
     CreateGroupRequest: {
       code: string;
       faculty?: string;
@@ -326,6 +425,8 @@ export interface components {
       academicYear: number;
       /** Format: int32 */
       semester: number;
+      /** Format: int64 */
+      templateId?: number;
     };
     CourseTeacherResponse: {
       /** Format: int64 */
@@ -418,6 +519,31 @@ export interface components {
       createdAt?: string;
       /** Format: date-time */
       updatedAt?: string;
+    };
+    PageResponseCourseTemplateResponse: {
+      content?: components['schemas']['CourseTemplateResponse'][];
+      /** Format: int32 */
+      page?: number;
+      /** Format: int32 */
+      size?: number;
+      /** Format: int64 */
+      totalElements?: number;
+      /** Format: int32 */
+      totalPages?: number;
+    };
+    CourseTemplateDetailResponse: {
+      /** Format: int64 */
+      id?: number;
+      name?: string;
+      description?: string;
+      /** Format: int64 */
+      ownerId?: number;
+      ownerFullName?: string;
+      /** Format: date-time */
+      createdAt?: string;
+      /** Format: date-time */
+      updatedAt?: string;
+      assignments?: components['schemas']['TemplateAssignmentResponse'][];
     };
     SubmissionStatusResponse: {
       /** Format: int64 */
@@ -564,6 +690,102 @@ export interface operations {
       };
     };
   };
+  getTemplate: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['CourseTemplateDetailResponse'];
+        };
+      };
+    };
+  };
+  updateTemplate: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateCourseTemplateRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['CourseTemplateResponse'];
+        };
+      };
+    };
+  };
+  deleteTemplate: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: never;
+      };
+    };
+  };
+  getAssignment: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['TemplateAssignmentResponse'];
+        };
+      };
+    };
+  };
+  updateAssignment: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateTemplateAssignmentRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['TemplateAssignmentResponse'];
+        };
+      };
+    };
+  };
+  deleteAssignment: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: never;
+      };
+    };
+  };
   getGroup: {
     parameters: {
       path: {
@@ -660,7 +882,7 @@ export interface operations {
       };
     };
   };
-  getAssignment: {
+  getAssignment_1: {
     parameters: {
       path: {
         id: number;
@@ -675,7 +897,7 @@ export interface operations {
       };
     };
   };
-  updateAssignment: {
+  updateAssignment_1: {
     parameters: {
       path: {
         id: number;
@@ -797,6 +1019,127 @@ export interface operations {
       200: {
         content: {
           '*/*': components['schemas']['StudentResponse'];
+        };
+      };
+    };
+  };
+  listTemplates: {
+    parameters: {
+      query?: {
+        query?: string;
+        /** @description Zero-based page index (0..N) */
+        page?: number;
+        /** @description The size of the page to be returned */
+        size?: number;
+        /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+        sort?: string[];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['PageResponseCourseTemplateResponse'];
+        };
+      };
+    };
+  };
+  createTemplate: {
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateCourseTemplateRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['CourseTemplateResponse'];
+        };
+      };
+    };
+  };
+  listShares: {
+    parameters: {
+      path: {
+        templateId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['TemplateShareResponse'][];
+        };
+      };
+    };
+  };
+  shareTemplate: {
+    parameters: {
+      path: {
+        templateId: number;
+      };
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateTemplateShareRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['TemplateShareResponse'];
+        };
+      };
+    };
+  };
+  listAssignments: {
+    parameters: {
+      path: {
+        templateId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['TemplateAssignmentResponse'][];
+        };
+      };
+    };
+  };
+  createAssignment: {
+    parameters: {
+      path: {
+        templateId: number;
+      };
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateTemplateAssignmentRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['TemplateAssignmentResponse'];
+        };
+      };
+    };
+  };
+  copyTemplate: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['CourseTemplateResponse'];
         };
       };
     };
@@ -999,7 +1342,7 @@ export interface operations {
       };
     };
   };
-  listAssignments: {
+  listAssignments_1: {
     parameters: {
       path: {
         courseId: number;
@@ -1014,7 +1357,7 @@ export interface operations {
       };
     };
   };
-  createAssignment: {
+  createAssignment_1: {
     parameters: {
       path: {
         courseId: number;
@@ -1149,6 +1492,16 @@ export interface operations {
       /** @description OK */
       200: {
         content: never;
+      };
+    };
+  };
+  getCurrentTeacher: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['TeacherResponse'];
+        };
       };
     };
   };
@@ -1342,6 +1695,20 @@ export interface operations {
         content: {
           '*/*': components['schemas']['SubmissionResponse'];
         };
+      };
+    };
+  };
+  unshareTemplate: {
+    parameters: {
+      path: {
+        templateId: number;
+        teacherId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: never;
       };
     };
   };

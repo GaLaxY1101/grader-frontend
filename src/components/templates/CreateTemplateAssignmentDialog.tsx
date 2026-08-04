@@ -4,13 +4,12 @@ import { AssignmentFormFields } from '@/components/assignments/AssignmentFormFie
 import {
   assignmentFormSchema,
   buildProgrammingTaskPayload,
-  toFormDefaults,
+  emptyFormDefaults,
   type AssignmentFormValues,
 } from '@/components/assignments/assignmentFormSchema';
 import { runCompileCheck } from '@/components/assignments/useAssignmentCompileCheck';
 import { CompilationErrorDialog } from '@/components/common/CompilationErrorDialog';
 import { apiClient } from '@/lib/api/client';
-import type { components } from '@/lib/api/types/index';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
@@ -23,45 +22,36 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 
-type AssignmentResponse = components['schemas']['AssignmentResponse'];
-
-interface EditAssignmentDialogProps {
-  assignment: AssignmentResponse;
+interface CreateTemplateAssignmentDialogProps {
+  templateId: number;
   open: boolean;
   onClose: () => void;
 }
 
-export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignmentDialogProps) => {
+export const CreateTemplateAssignmentDialog = ({
+  templateId,
+  open,
+  onClose,
+}: CreateTemplateAssignmentDialogProps) => {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [compileError, setCompileError] = useState<string | null>(null);
 
-  const hadCodeCheck = assignment.programmingTask != null;
-
   const form = useForm<AssignmentFormValues>({
     resolver: zodResolver(assignmentFormSchema),
-    defaultValues: toFormDefaults(assignment),
+    defaultValues: emptyFormDefaults,
   });
 
   useEffect(() => {
-    form.reset(toFormDefaults(assignment));
-  }, [assignment, form]);
+    if (!open) form.reset(emptyFormDefaults);
+  }, [open, form]);
 
   const handleClose = () => {
-    form.reset();
+    form.reset(emptyFormDefaults);
     onClose();
   };
 
   const onSubmit = async (data: AssignmentFormValues) => {
-    if (assignment.id == null) return;
-
-    if (hadCodeCheck && !data.enableCodeCheck) {
-      const confirmed = window.confirm(
-        'This will delete the existing code check configuration (function signature, test cases, etc.). Continue?',
-      );
-      if (!confirmed) return;
-    }
-
     setSubmitting(true);
     try {
       const compile = await runCompileCheck(data);
@@ -69,28 +59,24 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
         if (compile.kind === 'compile_error') setCompileError(compile.output);
         return;
       }
-
-      const { error } = await apiClient.PUT('/api/assignments/{id}', {
-        params: { path: { id: assignment.id } },
+      const { error } = await apiClient.POST('/api/templates/{templateId}/assignments', {
+        params: { path: { templateId } },
         body: {
           title: data.title,
           description: data.description || undefined,
           maxScore: data.maxScore,
-          deadline: data.deadline || undefined,
           programmingTask: buildProgrammingTaskPayload(data),
         },
       });
-
       if (error) {
-        toast.error('Failed to update assignment');
+        toast.error('Failed to create assignment');
         return;
       }
-
-      toast.success('Assignment updated');
+      toast.success('Assignment created');
       handleClose();
       router.refresh();
     } catch {
-      toast.error('Failed to update assignment');
+      toast.error('Failed to create assignment');
     } finally {
       setSubmitting(false);
     }
@@ -99,19 +85,17 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
   return (
     <>
       <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
-        <DialogTitle>Edit Assignment</DialogTitle>
-
+        <DialogTitle>New Template Assignment</DialogTitle>
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
           <DialogContent>
-            <AssignmentFormFields form={form} showDeadline />
+            <AssignmentFormFields form={form} showDeadline={false} />
           </DialogContent>
-
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={handleClose} disabled={submitting}>
               Cancel
             </Button>
             <LoadingButton type="submit" variant="contained" loading={submitting}>
-              Save changes
+              Create
             </LoadingButton>
           </DialogActions>
         </form>

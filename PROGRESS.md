@@ -442,3 +442,40 @@ const { data, error } = await client.GET('/api/courses');
 
 ### Next
 - Manual smoke test in browser (dev server): as TEACHER set a grade → see it in gradebook → export CSV/XLSX opens correctly. Auto-populate check: STUDENT submits code-check → after `PASSED`, grade auto-set to `bestScore`.
+
+---
+
+## 2026-08-04 — Course templates
+
+### Done
+
+**Backend**
+- **New feature package** `ua.kpi.grader.template` (entity, repository, dto, service, controller, mapper).
+- **Entities** — `CourseTemplate`, `TemplateAssignment`, `TemplateProgrammingTask`, `TemplateTestCase`, `TemplateShare`. Template assignments have no `deadline` and no `isActive` — instantiated course assignments get a null deadline the teacher fills in.
+- **Migration V19** `V19__init_course_templates.sql` — 5 tables with `fk_{table}_{ref}` names, cascade delete on `template_id` chains, unique `(template_id, shared_with_teacher_id)`.
+- **Access model** — `TemplateAccessService.requireView` (owner ∪ shared ∪ ADMIN); `requireEdit` (owner ∪ ADMIN). Non-owner edit attempts throw Spring's `AccessDeniedException` → 403 via `GlobalExceptionHandler`.
+- **Endpoints** — REST under `/api/templates`, `/api/templates/{templateId}/assignments`, `/api/template-assignments/{id}`, `/api/templates/{templateId}/shares`. Copy at `POST /api/templates/{id}/copy` (deep clone, new owner=caller, no shares carried over).
+- **Course-from-template** — `CreateCourseRequest` gained optional `templateId`. `CourseServiceImpl.createCourse` snapshots template assignments (incl. programming tasks + test cases) into the new course via new `TemplateToCourseMapper`.
+- **`/api/v1/teachers/me`** — new endpoint (needed by FE to detect owned-vs-shared without extra plumbing).
+- **Tests** — 24 new Mockito unit tests across `TemplateAccessServiceTest`, `CourseTemplateServiceTest`, `TemplateAssignmentServiceTest`, `TemplateShareServiceTest` (happy + not-found + auth-denied paths). Existing suite unchanged. `mvn test` → 112/112 green.
+
+**Frontend**
+- **Shared assignment form refactor** — extracted `assignmentFormSchema.ts` (Zod + `buildProgrammingTaskPayload` + `toFormDefaults`), `AssignmentFormFields.tsx` (all fields incl. Monaco editors), and `useAssignmentCompileCheck` helper. `EditAssignmentDialog` (course) and `NewAssignmentPage` (course) refactored to use them; parallel `EditTemplateAssignmentDialog` / `CreateTemplateAssignmentDialog` use them with `showDeadline={false}`. One source of truth for the form.
+- **Nav** — Templates tab (ContentCopy icon) added to `TEACHER` and `ADMIN` in `navigationConfig`.
+- **Templates list** — `/templates` server page → `TemplatesPageBody` fetches templates page + current teacher in parallel → `TemplatesResults` (client, pagination) → `TemplatesGrid` → `TemplateCard` with owned/shared badge and per-card menu (Copy, Share, Delete for owners).
+- **Template detail** — `/templates/[id]` server page → `TemplateDetailBody` → `TemplateDetailHeader` (Edit / Copy / Share / Delete; non-owner Edit triggers the copy-prompt described in requirements) + `TemplateAssignmentsList` (rows with Edit / Delete for owners, Add button).
+- **Share dialog** — `ShareTemplateDialog` lists current shares + Autocomplete to pick a new teacher (filters out already-shared and self).
+- **Course-from-template** — `CreateCourseDialog` gained a `Create from template` Autocomplete; picking a template sends `templateId` in the POST body, backend snapshots assignments into the new course.
+- **Type regen** — `pnpm generate-api` picks up all new endpoints; `pnpm build` + `tsc:test` + `lint` green.
+
+### Decisions
+- **Separate template entities** rather than an `isTemplate` flag on `Course` — avoids leaking template rows into every course query and keeps the schema honest.
+- **`TemplateProgrammingTask` duplicated** from `ProgrammingTask` because the latter has a `NOT NULL assignment_id` FK. `ProgrammingTaskDetails` and `TestCaseDetails` DTOs are reused as request payloads (pure data, no coupling).
+- **Snapshot, not live link** — `CourseTemplate` copy semantics for both template→template copy and template→course instantiate. Later edits to the source template do not propagate.
+- **Non-owner Edit → copy prompt** on both card action and detail-header button (per requirements). Owner check is server-authoritative (403 on PUT); FE only nudges the flow.
+- **`/api/v1/teachers/me`** instead of embedding `ownedByCurrentUser` in every template response — one small endpoint, cached on the FE for the detail/list pages.
+- **Shared assignment form** — decided against duplicating `EditAssignmentDialog` (~1250 lines); extracted `AssignmentFormFields` so course and template variants share the entire form body.
+
+### Next
+- Manual browser smoke: create template → add assignment (with programming task + test cases) → share with another teacher → sign in as that teacher → try to edit → confirm copy prompt → copy → verify new copy owned by caller. Then create course from template → verify assignments were snapshotted.
+- Consider adding server-side integration tests for template access rules (WebMvcTest with mocked JWT) as a follow-up.

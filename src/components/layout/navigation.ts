@@ -13,10 +13,12 @@ export const navigationConfig: Record<Role, NavItem[]> = {
   ],
   TEACHER: [
     { label: 'Courses', href: '/courses', icon: 'School' },
+    { label: 'Templates', href: '/templates', icon: 'ContentCopy' },
     { label: 'Archive', href: '/archive', icon: 'Archive' },
   ],
   ADMIN: [
     { label: 'Courses', href: '/courses', icon: 'School' },
+    { label: 'Templates', href: '/templates', icon: 'ContentCopy' },
     { label: 'Archive', href: '/archive', icon: 'Archive' },
     { label: 'Users & Groups', href: '/admin', icon: 'ManageAccounts' },
   ],
