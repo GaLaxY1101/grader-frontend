@@ -205,18 +205,10 @@ export interface components {
       /** @enum {string} */
       language: 'C' | 'CPP';
       /** @enum {string} */
-      testMode?: 'IO' | 'UNIT_TEST';
+      testMode?: 'UNIT_TEST';
       ciConfigTemplate?: string;
       functionSignature?: string;
       testFileContent?: string;
-      testCases?: components['schemas']['TestCaseDetails'][];
-    };
-    TestCaseDetails: {
-      name: string;
-      /** @enum {string} */
-      testType: 'IO' | 'EXCEPTION';
-      input?: string;
-      expectedOutput?: string;
     };
     UpdateTemplateAssignmentRequest: {
       title: string;

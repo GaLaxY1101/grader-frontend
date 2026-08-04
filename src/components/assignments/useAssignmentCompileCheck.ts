@@ -18,8 +18,7 @@ export async function runCompileCheck(data: AssignmentFormValues): Promise<Compi
   const { data: result, error } = await apiClient.POST('/api/compile/validate', {
     body: {
       solutionCode: data.functionSignature,
-      testFileContent:
-        data.testMode === 'UNIT_TEST' ? data.testFileContent || undefined : undefined,
+      testFileContent: data.testFileContent || undefined,
     },
   });
 

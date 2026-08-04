@@ -257,7 +257,6 @@ export default async function AssignmentDetailPage({
                   assignmentId={assignmentId}
                   language={programmingTask?.language}
                   existingSubmissionId={mySubmission?.id}
-                  testMode={programmingTask?.testMode}
                   functionSignature={programmingTask?.functionSignature}
                   lastAttemptCode={latestAttemptCode}
                 />

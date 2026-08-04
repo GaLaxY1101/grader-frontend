@@ -8,18 +8,15 @@ import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
-import FormLabel from '@mui/material/FormLabel';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useCallback, useRef } from 'react';
-import { Controller, useFieldArray, type UseFormReturn } from 'react-hook-form';
+import { Controller, type UseFormReturn } from 'react-hook-form';
 import type { AssignmentFormValues } from './assignmentFormSchema';
 
 interface AssignmentFormFieldsProps {
@@ -37,11 +34,7 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
   } = form;
 
   const enableCodeCheck = watch('enableCodeCheck');
-  const testMode = watch('testMode');
-  const testCases = watch('testCases');
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const { fields, append, remove } = useFieldArray({ control, name: 'testCases' });
 
   const handleTestFileUpload = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +95,7 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
               <Box>
                 <Typography variant="subtitle2">Enable Code Check</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Students submit C/C++ code that is compiled and tested automatically.
+                  Students submit C++ code that is compiled against a teacher-provided test file.
                 </Typography>
               </Box>
             }
@@ -126,26 +119,6 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
               </FormControl>
             )}
           />
-
-          <FormControl>
-            <FormLabel sx={{ mb: 1 }}>
-              <Typography variant="subtitle2">Test mode</Typography>
-            </FormLabel>
-            <Controller
-              name="testMode"
-              control={control}
-              render={({ field }) => (
-                <RadioGroup row {...field} value={field.value ?? 'IO'}>
-                  <FormControlLabel value="IO" control={<Radio size="small" />} label="I/O Tests" />
-                  <FormControlLabel
-                    value="UNIT_TEST"
-                    control={<Radio size="small" />}
-                    label="Unit Tests"
-                  />
-                </RadioGroup>
-              )}
-            />
-          </FormControl>
 
           <TextField
             {...register('ciConfigTemplate')}
@@ -205,163 +178,65 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
             <FormHelperText error>{errors.functionSignature.message}</FormHelperText>
           )}
 
-          {testMode === 'UNIT_TEST' && (
-            <>
-              <Divider />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="subtitle2">Test File (test.cpp)</Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    size="small"
-                    onClick={() =>
-                      setValue('testFileContent', formatCpp(watch('testFileContent') ?? ''))
-                    }
-                  >
-                    Format Code
-                  </Button>
-                  <Button size="small" onClick={() => fileInputRef.current?.click()}>
-                    Upload File
-                  </Button>
-                </Box>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".cpp,.cxx,.cc,.h,.hpp"
-                  hidden
-                  onChange={handleTestFileUpload}
+          <Divider />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="subtitle2">Test File (test.cpp)</Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                onClick={() =>
+                  setValue('testFileContent', formatCpp(watch('testFileContent') ?? ''))
+                }
+              >
+                Format Code
+              </Button>
+              <Button size="small" onClick={() => fileInputRef.current?.click()}>
+                Upload File
+              </Button>
+            </Box>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".cpp,.cxx,.cc,.h,.hpp"
+              hidden
+              onChange={handleTestFileUpload}
+            />
+          </Box>
+          <Typography variant="caption" color="text.secondary">
+            Write assertions in main(). Use #include &quot;solution.cpp&quot; to access student
+            code. Return 0 on success.
+          </Typography>
+          <Controller
+            name="testFileContent"
+            control={control}
+            render={({ field }) => (
+              <Box
+                sx={{
+                  border: '1px solid',
+                  borderColor: errors.testFileContent ? 'error.main' : 'divider',
+                  borderRadius: 1,
+                  overflow: 'hidden',
+                }}
+              >
+                <Editor
+                  height="250px"
+                  language="cpp"
+                  theme="vs-dark"
+                  value={field.value ?? ''}
+                  onChange={(value) => field.onChange(value ?? '')}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 13,
+                    tabSize: 4,
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                  }}
                 />
               </Box>
-              <Typography variant="caption" color="text.secondary">
-                Write assertions in main(). Use #include &quot;solution.cpp&quot; to access student
-                code. Return 0 on success.
-              </Typography>
-              <Controller
-                name="testFileContent"
-                control={control}
-                render={({ field }) => (
-                  <Box
-                    sx={{
-                      border: '1px solid',
-                      borderColor: errors.testFileContent ? 'error.main' : 'divider',
-                      borderRadius: 1,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <Editor
-                      height="250px"
-                      language="cpp"
-                      theme="vs-dark"
-                      value={field.value ?? ''}
-                      onChange={(value) => field.onChange(value ?? '')}
-                      options={{
-                        minimap: { enabled: false },
-                        fontSize: 13,
-                        tabSize: 4,
-                        lineNumbers: 'on',
-                        scrollBeyondLastLine: false,
-                      }}
-                    />
-                  </Box>
-                )}
-              />
-              {errors.testFileContent && (
-                <FormHelperText error>{errors.testFileContent.message}</FormHelperText>
-              )}
-            </>
-          )}
-
-          {testMode !== 'UNIT_TEST' && (
-            <>
-              <Divider />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="subtitle2">Test Cases</Typography>
-                <Button
-                  size="small"
-                  onClick={() =>
-                    append({ name: '', testType: 'IO', input: '', expectedOutput: '' })
-                  }
-                >
-                  + Add Test Case
-                </Button>
-              </Box>
-
-              {fields.map((field, index) => (
-                <Box
-                  key={field.id}
-                  sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}
-                >
-                  <Stack spacing={1.5}>
-                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                      <TextField
-                        {...register(`testCases.${index}.name`)}
-                        label="Test name"
-                        size="small"
-                        required
-                        error={errors.testCases?.[index]?.name != null}
-                        helperText={errors.testCases?.[index]?.name?.message}
-                        sx={{ flex: 1 }}
-                      />
-                      <Button
-                        size="small"
-                        color="error"
-                        onClick={() => remove(index)}
-                        sx={{ minWidth: 32, px: 1, mt: 0.5 }}
-                      >
-                        ✕
-                      </Button>
-                    </Box>
-
-                    <FormControl>
-                      <FormLabel>
-                        <Typography variant="caption" color="text.secondary">
-                          Test type
-                        </Typography>
-                      </FormLabel>
-                      <Controller
-                        name={`testCases.${index}.testType`}
-                        control={control}
-                        render={({ field: typeField }) => (
-                          <RadioGroup row {...typeField}>
-                            <FormControlLabel
-                              value="IO"
-                              control={<Radio size="small" />}
-                              label="IO (input / output)"
-                            />
-                            <FormControlLabel
-                              value="EXCEPTION"
-                              control={<Radio size="small" />}
-                              label="Exception (non-zero exit)"
-                            />
-                          </RadioGroup>
-                        )}
-                      />
-                    </FormControl>
-
-                    <TextField
-                      {...register(`testCases.${index}.input`)}
-                      label="Input"
-                      multiline
-                      rows={2}
-                      size="small"
-                      inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
-                      fullWidth
-                    />
-
-                    {testCases?.[index]?.testType === 'IO' && (
-                      <TextField
-                        {...register(`testCases.${index}.expectedOutput`)}
-                        label="Expected output"
-                        multiline
-                        rows={2}
-                        size="small"
-                        inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
-                        fullWidth
-                      />
-                    )}
-                  </Stack>
-                </Box>
-              ))}
-            </>
+            )}
+          />
+          {errors.testFileContent && (
+            <FormHelperText error>{errors.testFileContent.message}</FormHelperText>
           )}
         </>
       )}

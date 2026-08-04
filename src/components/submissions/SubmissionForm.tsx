@@ -32,7 +32,6 @@ interface SubmissionFormProps {
   assignmentId: number;
   language?: string | null;
   existingSubmissionId?: number | null;
-  testMode?: string | null;
   functionSignature?: string | null;
   lastAttemptCode?: string | null;
 }
