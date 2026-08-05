@@ -14,6 +14,7 @@ import FormHelperText from '@mui/material/FormHelperText';
 import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
+import Paper from '@mui/material/Paper';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
@@ -136,146 +137,171 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
             fullWidth
           />
 
-          <Divider />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <IconButton
-                size="small"
-                onClick={() => setSignatureOpen((v) => !v)}
-                aria-label={signatureOpen ? 'Collapse editor' : 'Expand editor'}
-              >
-                {signatureOpen ? (
-                  <ExpandLessIcon fontSize="small" />
-                ) : (
-                  <ExpandMoreIcon fontSize="small" />
-                )}
-              </IconButton>
-              <Typography variant="subtitle2">Function Signature / Template Code</Typography>
-            </Box>
-            <Button
-              size="small"
-              onClick={() =>
-                setValue('functionSignature', formatCpp(watch('functionSignature') ?? ''))
-              }
-            >
-              Format Code
-            </Button>
-          </Box>
-          <Typography variant="caption" color="text.secondary">
-            This code will be pre-filled in the student&apos;s editor.
-          </Typography>
-          <Collapse in={signatureOpen} unmountOnExit={false}>
-            <Controller
-              name="functionSignature"
-              control={control}
-              render={({ field }) => (
-                <Box
-                  sx={{
-                    border: '1px solid',
-                    borderColor: errors.functionSignature ? 'error.main' : 'divider',
-                    borderRadius: 1,
-                    overflow: 'hidden',
-                  }}
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              mt: 1,
+              borderColor: errors.functionSignature ? 'error.main' : 'divider',
+              bgcolor: 'background.default',
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <IconButton
+                  size="small"
+                  onClick={() => setSignatureOpen((v) => !v)}
+                  aria-label={signatureOpen ? 'Collapse editor' : 'Expand editor'}
                 >
-                  <Editor
-                    height="350px"
-                    language="cpp"
-                    theme="vs-dark"
-                    value={field.value ?? ''}
-                    onChange={(value) => field.onChange(value ?? '')}
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 13,
-                      tabSize: 4,
-                      lineNumbers: 'on',
-                      scrollBeyondLastLine: false,
-                      padding: { top: 12, bottom: 12 },
+                  {signatureOpen ? (
+                    <ExpandLessIcon fontSize="small" />
+                  ) : (
+                    <ExpandMoreIcon fontSize="small" />
+                  )}
+                </IconButton>
+                <Typography variant="subtitle2">Function Signature / Template Code</Typography>
+              </Box>
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              This code will be pre-filled in the student&apos;s editor.
+            </Typography>
+            <Collapse in={signatureOpen} unmountOnExit={false}>
+              <Controller
+                name="functionSignature"
+                control={control}
+                render={({ field }) => (
+                  <Box
+                    sx={{
+                      border: '1px solid',
+                      borderColor: errors.functionSignature ? 'error.main' : 'divider',
+                      borderRadius: 1,
+                      overflow: 'hidden',
                     }}
-                  />
-                </Box>
-              )}
-            />
-          </Collapse>
-          {errors.functionSignature && (
-            <FormHelperText error>{errors.functionSignature.message}</FormHelperText>
-          )}
+                  >
+                    <Editor
+                      height="350px"
+                      language="cpp"
+                      theme="vs-dark"
+                      value={field.value ?? ''}
+                      onChange={(value) => field.onChange(value ?? '')}
+                      options={{
+                        minimap: { enabled: false },
+                        fontSize: 13,
+                        tabSize: 4,
+                        lineNumbers: 'on',
+                        scrollBeyondLastLine: false,
+                        padding: { top: 12, bottom: 12 },
+                      }}
+                    />
+                  </Box>
+                )}
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() =>
+                    setValue('functionSignature', formatCpp(watch('functionSignature') ?? ''))
+                  }
+                >
+                  Format Code
+                </Button>
+              </Box>
+            </Collapse>
+            {errors.functionSignature && (
+              <FormHelperText error>{errors.functionSignature.message}</FormHelperText>
+            )}
+          </Paper>
 
-          <Divider />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <IconButton
-                size="small"
-                onClick={() => setTestFileOpen((v) => !v)}
-                aria-label={testFileOpen ? 'Collapse editor' : 'Expand editor'}
-              >
-                {testFileOpen ? (
-                  <ExpandLessIcon fontSize="small" />
-                ) : (
-                  <ExpandMoreIcon fontSize="small" />
-                )}
-              </IconButton>
-              <Typography variant="subtitle2">Test File (test.cpp)</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                size="small"
-                onClick={() =>
-                  setValue('testFileContent', formatCpp(watch('testFileContent') ?? ''))
-                }
-              >
-                Format Code
-              </Button>
-              <Button size="small" onClick={() => fileInputRef.current?.click()}>
-                Upload File
-              </Button>
-            </Box>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".cpp,.cxx,.cc,.h,.hpp"
-              hidden
-              onChange={handleTestFileUpload}
-            />
-          </Box>
-          <Typography variant="caption" color="text.secondary">
-            Write assertions in main(). Use #include &quot;solution.cpp&quot; to access student
-            code. Return 0 on success.
-          </Typography>
-          <Collapse in={testFileOpen} unmountOnExit={false}>
-            <Controller
-              name="testFileContent"
-              control={control}
-              render={({ field }) => (
-                <Box
-                  sx={{
-                    border: '1px solid',
-                    borderColor: errors.testFileContent ? 'error.main' : 'divider',
-                    borderRadius: 1,
-                    overflow: 'hidden',
-                  }}
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              borderColor: errors.testFileContent ? 'error.main' : 'divider',
+              bgcolor: 'background.default',
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <IconButton
+                  size="small"
+                  onClick={() => setTestFileOpen((v) => !v)}
+                  aria-label={testFileOpen ? 'Collapse editor' : 'Expand editor'}
                 >
-                  <Editor
-                    height="500px"
-                    language="cpp"
-                    theme="vs-dark"
-                    value={field.value ?? ''}
-                    onChange={(value) => field.onChange(value ?? '')}
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 13,
-                      tabSize: 4,
-                      lineNumbers: 'on',
-                      scrollBeyondLastLine: false,
-                      padding: { top: 12, bottom: 12 },
+                  {testFileOpen ? (
+                    <ExpandLessIcon fontSize="small" />
+                  ) : (
+                    <ExpandMoreIcon fontSize="small" />
+                  )}
+                </IconButton>
+                <Typography variant="subtitle2">Test File (test.cpp)</Typography>
+              </Box>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".cpp,.cxx,.cc,.h,.hpp"
+                hidden
+                onChange={handleTestFileUpload}
+              />
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              Write assertions in main(). Use #include &quot;solution.cpp&quot; to access student
+              code. Return 0 on success.
+            </Typography>
+            <Collapse in={testFileOpen} unmountOnExit={false}>
+              <Controller
+                name="testFileContent"
+                control={control}
+                render={({ field }) => (
+                  <Box
+                    sx={{
+                      border: '1px solid',
+                      borderColor: errors.testFileContent ? 'error.main' : 'divider',
+                      borderRadius: 1,
+                      overflow: 'hidden',
                     }}
-                  />
-                </Box>
-              )}
-            />
-          </Collapse>
-          {errors.testFileContent && (
-            <FormHelperText error>{errors.testFileContent.message}</FormHelperText>
-          )}
+                  >
+                    <Editor
+                      height="500px"
+                      language="cpp"
+                      theme="vs-dark"
+                      value={field.value ?? ''}
+                      onChange={(value) => field.onChange(value ?? '')}
+                      options={{
+                        minimap: { enabled: false },
+                        fontSize: 13,
+                        tabSize: 4,
+                        lineNumbers: 'on',
+                        scrollBeyondLastLine: false,
+                        padding: { top: 12, bottom: 12 },
+                      }}
+                    />
+                  </Box>
+                )}
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() =>
+                    setValue('testFileContent', formatCpp(watch('testFileContent') ?? ''))
+                  }
+                >
+                  Format Code
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Upload File
+                </Button>
+              </Box>
+            </Collapse>
+            {errors.testFileContent && (
+              <FormHelperText error>{errors.testFileContent.message}</FormHelperText>
+            )}
+          </Paper>
         </>
       )}
     </Stack>
