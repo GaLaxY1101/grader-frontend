@@ -208,7 +208,7 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
                     <Editor
                       height="350px"
                       language="cpp"
-                      theme="vs-dark"
+                      theme="vs"
                       value={field.value ?? ''}
                       onChange={(value) => field.onChange(value ?? '')}
                       options={{
@@ -216,8 +216,11 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
                         fontSize: 13,
                         tabSize: 4,
                         lineNumbers: 'on',
+                        lineNumbersMinChars: 3,
+                        wordWrap: 'on',
                         scrollBeyondLastLine: false,
                         padding: { top: 12, bottom: 12 },
+                        scrollbar: { alwaysConsumeMouseWheel: false },
                       }}
                     />
                   </Box>
@@ -299,7 +302,7 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
                     <Editor
                       height="500px"
                       language="cpp"
-                      theme="vs-dark"
+                      theme="vs"
                       value={field.value ?? ''}
                       onChange={(value) => field.onChange(value ?? '')}
                       options={{
@@ -307,8 +310,11 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
                         fontSize: 13,
                         tabSize: 4,
                         lineNumbers: 'on',
+                        lineNumbersMinChars: 3,
+                        wordWrap: 'on',
                         scrollBeyondLastLine: false,
                         padding: { top: 12, bottom: 12 },
+                        scrollbar: { alwaysConsumeMouseWheel: false },
                       }}
                     />
                   </Box>

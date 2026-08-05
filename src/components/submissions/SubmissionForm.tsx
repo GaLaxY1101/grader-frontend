@@ -122,6 +122,7 @@ export const SubmissionForm = ({
           <Editor
             height="400px"
             language={toMonacoLanguage(language)}
+            theme="vs"
             value={code}
             onChange={(value) => setCode(value ?? '')}
             loading={
@@ -137,13 +138,15 @@ export const SubmissionForm = ({
               </Box>
             }
             options={{
-              fontSize: 13,
               minimap: { enabled: false },
-              scrollBeyondLastLine: false,
+              fontSize: 13,
               tabSize: 4,
-              wordWrap: 'on',
+              lineNumbers: 'on',
               lineNumbersMinChars: 3,
+              wordWrap: 'on',
+              scrollBeyondLastLine: false,
               padding: { top: 12, bottom: 12 },
+              scrollbar: { alwaysConsumeMouseWheel: false },
             }}
           />
         </Box>
