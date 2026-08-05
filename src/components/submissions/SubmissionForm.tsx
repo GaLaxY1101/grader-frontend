@@ -2,12 +2,10 @@
 
 import { CompilationErrorDialog } from '@/components/common/CompilationErrorDialog';
 import { apiClient } from '@/lib/api/client';
-import { formatCpp } from '@/utils/formatCpp';
 import Editor from '@monaco-editor/react';
 import { LoadingButton } from '@mui/lab';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -47,10 +45,6 @@ export const SubmissionForm = ({
   const [code, setCode] = useState(lastAttemptCode ?? functionSignature ?? '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [compileError, setCompileError] = useState<string | null>(null);
-
-  const handleFormat = () => {
-    setCode((current) => formatCpp(current));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,15 +157,6 @@ export const SubmissionForm = ({
           >
             Submit
           </LoadingButton>
-          <Button
-            variant="contained"
-            size="small"
-            color="inherit"
-            onClick={handleFormat}
-            disabled={isSubmitting}
-          >
-            Format Code
-          </Button>
         </Box>
       </Box>
       <CompilationErrorDialog

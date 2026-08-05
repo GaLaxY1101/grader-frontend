@@ -46,6 +46,33 @@ export const assignmentFormSchema = z
 
 export type AssignmentFormValues = z.infer<typeof assignmentFormSchema>;
 
+const TEST_FILE_TEMPLATES: Record<'C' | 'CPP', string> = {
+  CPP: `#include "solution.cpp"
+#include <cassert>
+
+int main() {
+    return 0;
+}
+`,
+  C: `#include "solution.c"
+#include <assert.h>
+
+int main(void) {
+    return 0;
+}
+`,
+};
+
+/**
+ * Returns a starter test file for the given language, or empty string if
+ * the language is not recognised. Used to pre-fill the test editor when
+ * the teacher picks a language.
+ */
+export function getTestFileTemplate(language: string | null | undefined): string {
+  if (language == null) return '';
+  return TEST_FILE_TEMPLATES[language as 'C' | 'CPP'] ?? '';
+}
+
 export type ProgrammingTaskPayload = {
   language: 'C' | 'CPP';
   testMode: 'UNIT_TEST';

@@ -26,6 +26,15 @@ export const CompilationErrorDialog = ({ open, output, onClose }: CompilationErr
     if (!open) setCopied(false);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [open, onClose]);
+
   const handleCopy = async () => {
     const text = output ?? '';
     if (!text) return;
@@ -43,18 +52,26 @@ export const CompilationErrorDialog = ({ open, output, onClose }: CompilationErr
   return (
     <Portal>
       <Box
+        onClick={onClose}
         sx={{
           position: 'fixed',
-          top: 24,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 'min(900px, calc(100vw - 48px))',
+          inset: 0,
+          bgcolor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 3,
           zIndex: (theme) => theme.zIndex.modal + 200,
         }}
       >
         <Paper
-          elevation={8}
+          elevation={24}
+          onClick={(e) => e.stopPropagation()}
           sx={{
+            width: 'min(900px, 100%)',
+            maxHeight: 'calc(100vh - 48px)',
+            display: 'flex',
+            flexDirection: 'column',
             borderTop: '4px solid',
             borderColor: 'error.main',
             overflow: 'hidden',

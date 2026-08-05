@@ -1,6 +1,5 @@
 'use client';
 
-import { formatCpp } from '@/utils/formatCpp';
 import Editor from '@monaco-editor/react';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -19,9 +18,9 @@ import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, type UseFormReturn } from 'react-hook-form';
-import type { AssignmentFormValues } from './assignmentFormSchema';
+import { getTestFileTemplate, type AssignmentFormValues } from './assignmentFormSchema';
 
 interface AssignmentFormFieldsProps {
   form: UseFormReturn<AssignmentFormValues>;
@@ -34,11 +33,21 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
     control,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = form;
 
   const enableCodeCheck = watch('enableCodeCheck');
+  const language = watch('language');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!enableCodeCheck || !language) return;
+    const current = getValues('testFileContent') ?? '';
+    if (current.trim() !== '') return;
+    const template = getTestFileTemplate(language);
+    if (template) setValue('testFileContent', template, { shouldDirty: false });
+  }, [enableCodeCheck, language, getValues, setValue]);
   const [signatureOpen, setSignatureOpen] = useState<boolean>(true);
   const [testFileOpen, setTestFileOpen] = useState<boolean>(true);
 
@@ -214,17 +223,6 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
                   </Box>
                 )}
               />
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() =>
-                    setValue('functionSignature', formatCpp(watch('functionSignature') ?? ''))
-                  }
-                >
-                  Format Code
-                </Button>
-              </Box>
             </Collapse>
             {errors.functionSignature && (
               <FormHelperText error>{errors.functionSignature.message}</FormHelperText>
@@ -317,15 +315,6 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
                 )}
               />
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() =>
-                    setValue('testFileContent', formatCpp(watch('testFileContent') ?? ''))
-                  }
-                >
-                  Format Code
-                </Button>
                 <Button
                   size="small"
                   variant="outlined"
