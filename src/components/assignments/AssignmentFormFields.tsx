@@ -11,7 +11,6 @@ import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
-import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
@@ -102,7 +101,7 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
               <Box>
                 <Typography variant="subtitle2">Enable Code Check</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Students submit C++ code that is compiled against a teacher-provided test file.
+                  Students submit code that is compiled against a teacher-provided test file.
                 </Typography>
               </Box>
             }
@@ -110,8 +109,8 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
         )}
       />
 
-      {enableCodeCheck && (
-        <>
+      <Collapse in={enableCodeCheck} unmountOnExit timeout={600}>
+        <Stack spacing={2.5}>
           <Controller
             name="language"
             control={control}
@@ -146,25 +145,44 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
               bgcolor: 'background.default',
             }}
           >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box
+              role="button"
+              tabIndex={0}
+              onClick={() => setSignatureOpen((v) => !v)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setSignatureOpen((v) => !v);
+                }
+              }}
+              aria-expanded={signatureOpen}
+              aria-label={signatureOpen ? 'Collapse editor' : 'Expand editor'}
+              sx={{
+                display: 'block',
+                width: '100%',
+                cursor: 'pointer',
+                userSelect: 'none',
+                borderRadius: 1,
+                mx: -1,
+                px: 1,
+                py: 0.5,
+                mb: 1,
+                '&:hover': { bgcolor: 'action.hover' },
+                '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
+              }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <IconButton
-                  size="small"
-                  onClick={() => setSignatureOpen((v) => !v)}
-                  aria-label={signatureOpen ? 'Collapse editor' : 'Expand editor'}
-                >
-                  {signatureOpen ? (
-                    <ExpandLessIcon fontSize="small" />
-                  ) : (
-                    <ExpandMoreIcon fontSize="small" />
-                  )}
-                </IconButton>
+                {signatureOpen ? (
+                  <ExpandLessIcon fontSize="small" />
+                ) : (
+                  <ExpandMoreIcon fontSize="small" />
+                )}
                 <Typography variant="subtitle2">Function Signature / Template Code</Typography>
               </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                This code will be pre-filled in the student&apos;s editor.
+              </Typography>
             </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-              This code will be pre-filled in the student&apos;s editor.
-            </Typography>
             <Collapse in={signatureOpen} unmountOnExit={false}>
               <Controller
                 name="functionSignature"
@@ -221,33 +239,52 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
               bgcolor: 'background.default',
             }}
           >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box
+              role="button"
+              tabIndex={0}
+              onClick={() => setTestFileOpen((v) => !v)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setTestFileOpen((v) => !v);
+                }
+              }}
+              aria-expanded={testFileOpen}
+              aria-label={testFileOpen ? 'Collapse editor' : 'Expand editor'}
+              sx={{
+                display: 'block',
+                width: '100%',
+                cursor: 'pointer',
+                userSelect: 'none',
+                borderRadius: 1,
+                mx: -1,
+                px: 1,
+                py: 0.5,
+                mb: 1,
+                '&:hover': { bgcolor: 'action.hover' },
+                '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
+              }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <IconButton
-                  size="small"
-                  onClick={() => setTestFileOpen((v) => !v)}
-                  aria-label={testFileOpen ? 'Collapse editor' : 'Expand editor'}
-                >
-                  {testFileOpen ? (
-                    <ExpandLessIcon fontSize="small" />
-                  ) : (
-                    <ExpandMoreIcon fontSize="small" />
-                  )}
-                </IconButton>
+                {testFileOpen ? (
+                  <ExpandLessIcon fontSize="small" />
+                ) : (
+                  <ExpandMoreIcon fontSize="small" />
+                )}
                 <Typography variant="subtitle2">Test File (test.cpp)</Typography>
               </Box>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".cpp,.cxx,.cc,.h,.hpp"
-                hidden
-                onChange={handleTestFileUpload}
-              />
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Write assertions in main(). Use #include &quot;solution.cpp&quot; to access student
+                code. Return 0 on success.
+              </Typography>
             </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-              Write assertions in main(). Use #include &quot;solution.cpp&quot; to access student
-              code. Return 0 on success.
-            </Typography>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".cpp,.cxx,.cc,.h,.hpp"
+              hidden
+              onChange={handleTestFileUpload}
+            />
             <Collapse in={testFileOpen} unmountOnExit={false}>
               <Controller
                 name="testFileContent"
@@ -302,8 +339,8 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
               <FormHelperText error>{errors.testFileContent.message}</FormHelperText>
             )}
           </Paper>
-        </>
-      )}
+        </Stack>
+      </Collapse>
     </Stack>
   );
 };
