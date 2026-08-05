@@ -2,12 +2,16 @@
 
 import { formatCpp } from '@/utils/formatCpp';
 import Editor from '@monaco-editor/react';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Collapse from '@mui/material/Collapse';
 import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
+import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
@@ -15,7 +19,7 @@ import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Controller, type UseFormReturn } from 'react-hook-form';
 import type { AssignmentFormValues } from './assignmentFormSchema';
 
@@ -35,6 +39,8 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
 
   const enableCodeCheck = watch('enableCodeCheck');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [signatureOpen, setSignatureOpen] = useState<boolean>(true);
+  const [testFileOpen, setTestFileOpen] = useState<boolean>(true);
 
   const handleTestFileUpload = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,7 +138,20 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
 
           <Divider />
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="subtitle2">Function Signature / Template Code</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <IconButton
+                size="small"
+                onClick={() => setSignatureOpen((v) => !v)}
+                aria-label={signatureOpen ? 'Collapse editor' : 'Expand editor'}
+              >
+                {signatureOpen ? (
+                  <ExpandLessIcon fontSize="small" />
+                ) : (
+                  <ExpandMoreIcon fontSize="small" />
+                )}
+              </IconButton>
+              <Typography variant="subtitle2">Function Signature / Template Code</Typography>
+            </Box>
             <Button
               size="small"
               onClick={() =>
@@ -145,42 +164,58 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
           <Typography variant="caption" color="text.secondary">
             This code will be pre-filled in the student&apos;s editor.
           </Typography>
-          <Controller
-            name="functionSignature"
-            control={control}
-            render={({ field }) => (
-              <Box
-                sx={{
-                  border: '1px solid',
-                  borderColor: errors.functionSignature ? 'error.main' : 'divider',
-                  borderRadius: 1,
-                  overflow: 'hidden',
-                }}
-              >
-                <Editor
-                  height="150px"
-                  language="cpp"
-                  theme="vs-dark"
-                  value={field.value ?? ''}
-                  onChange={(value) => field.onChange(value ?? '')}
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 13,
-                    tabSize: 4,
-                    lineNumbers: 'on',
-                    scrollBeyondLastLine: false,
+          <Collapse in={signatureOpen} unmountOnExit={false}>
+            <Controller
+              name="functionSignature"
+              control={control}
+              render={({ field }) => (
+                <Box
+                  sx={{
+                    border: '1px solid',
+                    borderColor: errors.functionSignature ? 'error.main' : 'divider',
+                    borderRadius: 1,
+                    overflow: 'hidden',
                   }}
-                />
-              </Box>
-            )}
-          />
+                >
+                  <Editor
+                    height="350px"
+                    language="cpp"
+                    theme="vs-dark"
+                    value={field.value ?? ''}
+                    onChange={(value) => field.onChange(value ?? '')}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 13,
+                      tabSize: 4,
+                      lineNumbers: 'on',
+                      scrollBeyondLastLine: false,
+                      padding: { top: 12, bottom: 12 },
+                    }}
+                  />
+                </Box>
+              )}
+            />
+          </Collapse>
           {errors.functionSignature && (
             <FormHelperText error>{errors.functionSignature.message}</FormHelperText>
           )}
 
           <Divider />
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="subtitle2">Test File (test.cpp)</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <IconButton
+                size="small"
+                onClick={() => setTestFileOpen((v) => !v)}
+                aria-label={testFileOpen ? 'Collapse editor' : 'Expand editor'}
+              >
+                {testFileOpen ? (
+                  <ExpandLessIcon fontSize="small" />
+                ) : (
+                  <ExpandMoreIcon fontSize="small" />
+                )}
+              </IconButton>
+              <Typography variant="subtitle2">Test File (test.cpp)</Typography>
+            </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
                 size="small"
@@ -206,35 +241,38 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
             Write assertions in main(). Use #include &quot;solution.cpp&quot; to access student
             code. Return 0 on success.
           </Typography>
-          <Controller
-            name="testFileContent"
-            control={control}
-            render={({ field }) => (
-              <Box
-                sx={{
-                  border: '1px solid',
-                  borderColor: errors.testFileContent ? 'error.main' : 'divider',
-                  borderRadius: 1,
-                  overflow: 'hidden',
-                }}
-              >
-                <Editor
-                  height="250px"
-                  language="cpp"
-                  theme="vs-dark"
-                  value={field.value ?? ''}
-                  onChange={(value) => field.onChange(value ?? '')}
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 13,
-                    tabSize: 4,
-                    lineNumbers: 'on',
-                    scrollBeyondLastLine: false,
+          <Collapse in={testFileOpen} unmountOnExit={false}>
+            <Controller
+              name="testFileContent"
+              control={control}
+              render={({ field }) => (
+                <Box
+                  sx={{
+                    border: '1px solid',
+                    borderColor: errors.testFileContent ? 'error.main' : 'divider',
+                    borderRadius: 1,
+                    overflow: 'hidden',
                   }}
-                />
-              </Box>
-            )}
-          />
+                >
+                  <Editor
+                    height="500px"
+                    language="cpp"
+                    theme="vs-dark"
+                    value={field.value ?? ''}
+                    onChange={(value) => field.onChange(value ?? '')}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 13,
+                      tabSize: 4,
+                      lineNumbers: 'on',
+                      scrollBeyondLastLine: false,
+                      padding: { top: 12, bottom: 12 },
+                    }}
+                  />
+                </Box>
+              )}
+            />
+          </Collapse>
           {errors.testFileContent && (
             <FormHelperText error>{errors.testFileContent.message}</FormHelperText>
           )}
