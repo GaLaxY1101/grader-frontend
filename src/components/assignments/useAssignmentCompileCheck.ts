@@ -13,12 +13,13 @@ export type CompileCheckResult =
  * to surface the compile-error dialog.
  */
 export async function runCompileCheck(data: AssignmentFormValues): Promise<CompileCheckResult> {
-  if (!data.enableCodeCheck || !data.functionSignature) return { ok: true };
+  if (!data.enableCodeCheck || !data.functionSignature || !data.language) return { ok: true };
 
   const { data: result, error } = await apiClient.POST('/api/compile/validate', {
     body: {
       solutionCode: data.functionSignature,
       testFileContent: data.testFileContent || undefined,
+      language: data.language,
     },
   });
 

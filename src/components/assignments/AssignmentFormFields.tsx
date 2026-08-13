@@ -41,6 +41,17 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
   const language = watch('language');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const monacoLanguage = language === 'PYTHON' ? 'python' : language === 'C' ? 'c' : 'cpp';
+  const testFileName =
+    language === 'PYTHON' ? 'test_solution.py' : language === 'C' ? 'test.cpp' : 'test.cpp';
+  const testFileAccept = language === 'PYTHON' ? '.py' : '.cpp,.cxx,.cc,.h,.hpp,.c';
+  const solutionImportHint =
+    language === 'PYTHON'
+      ? 'Write pytest tests. Use `from solution import ...` to access student code.'
+      : language === 'C'
+        ? 'Write assertions in main(). Use #include "solution.c" to access student code. Return 0 on success.'
+        : 'Write assertions in main(). Use #include "solution.cpp" to access student code. Return 0 on success.';
+
   useEffect(() => {
     if (!enableCodeCheck || !language) return;
     const current = getValues('testFileContent') ?? '';
@@ -129,6 +140,7 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
                 <Select {...field} label="Language" value={field.value ?? ''}>
                   <MenuItem value="C">C</MenuItem>
                   <MenuItem value="CPP">C++</MenuItem>
+                  <MenuItem value="PYTHON">Python</MenuItem>
                 </Select>
                 {errors.language && <FormHelperText>{errors.language.message}</FormHelperText>}
               </FormControl>
@@ -207,7 +219,7 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
                   >
                     <Editor
                       height="350px"
-                      language="cpp"
+                      language={monacoLanguage}
                       theme="vs"
                       value={field.value ?? ''}
                       onChange={(value) => field.onChange(value ?? '')}
@@ -272,17 +284,16 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
                 ) : (
                   <ExpandMoreIcon fontSize="small" />
                 )}
-                <Typography variant="subtitle2">Test File (test.cpp)</Typography>
+                <Typography variant="subtitle2">Test File ({testFileName})</Typography>
               </Box>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                Write assertions in main(). Use #include &quot;solution.cpp&quot; to access student
-                code. Return 0 on success.
+                {solutionImportHint}
               </Typography>
             </Box>
             <input
               ref={fileInputRef}
               type="file"
-              accept=".cpp,.cxx,.cc,.h,.hpp"
+              accept={testFileAccept}
               hidden
               onChange={handleTestFileUpload}
             />
@@ -301,7 +312,7 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
                   >
                     <Editor
                       height="500px"
-                      language="cpp"
+                      language={monacoLanguage}
                       theme="vs"
                       value={field.value ?? ''}
                       onChange={(value) => field.onChange(value ?? '')}

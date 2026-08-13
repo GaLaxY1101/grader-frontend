@@ -203,7 +203,7 @@ export interface components {
     };
     ProgrammingTaskDetails: {
       /** @enum {string} */
-      language: 'C' | 'CPP';
+      language: 'C' | 'CPP' | 'PYTHON';
       /** @enum {string} */
       testMode?: 'UNIT_TEST';
       ciConfigTemplate?: string;
@@ -453,6 +453,8 @@ export interface components {
     CompileRequest: {
       solutionCode: string;
       testFileContent?: string;
+      /** @enum {string} */
+      language?: 'C' | 'CPP' | 'PYTHON';
     };
     CompileResponse: {
       success?: boolean;

@@ -7,7 +7,7 @@ export const assignmentFormSchema = z
     maxScore: z.number().min(1, 'Min 1').max(1000, 'Max 1000'),
     deadline: z.string().optional(),
     enableCodeCheck: z.boolean(),
-    language: z.enum(['C', 'CPP']).optional(),
+    language: z.enum(['C', 'CPP', 'PYTHON']).optional(),
     ciConfigTemplate: z.string().optional(),
     functionSignature: z.string().optional(),
     testFileContent: z.string().optional(),
@@ -18,13 +18,6 @@ export const assignmentFormSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Language is required',
-        path: ['language'],
-      });
-    }
-    if (data.language !== 'CPP') {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Unit test mode requires C++',
         path: ['language'],
       });
     }
@@ -46,7 +39,7 @@ export const assignmentFormSchema = z
 
 export type AssignmentFormValues = z.infer<typeof assignmentFormSchema>;
 
-const TEST_FILE_TEMPLATES: Record<'C' | 'CPP', string> = {
+const TEST_FILE_TEMPLATES: Record<'C' | 'CPP' | 'PYTHON', string> = {
   CPP: `#include "solution.cpp"
 #include <cassert>
 
@@ -61,6 +54,12 @@ int main(void) {
     return 0;
 }
 `,
+  PYTHON: `from solution import *
+
+
+def test_example():
+    assert True
+`,
 };
 
 /**
@@ -70,11 +69,11 @@ int main(void) {
  */
 export function getTestFileTemplate(language: string | null | undefined): string {
   if (language == null) return '';
-  return TEST_FILE_TEMPLATES[language as 'C' | 'CPP'] ?? '';
+  return TEST_FILE_TEMPLATES[language as 'C' | 'CPP' | 'PYTHON'] ?? '';
 }
 
 export type ProgrammingTaskPayload = {
-  language: 'C' | 'CPP';
+  language: 'C' | 'CPP' | 'PYTHON';
   testMode: 'UNIT_TEST';
   ciConfigTemplate?: string;
   functionSignature?: string;
@@ -101,7 +100,7 @@ export function buildProgrammingTaskPayload(
 ): ProgrammingTaskPayload | undefined {
   if (!data.enableCodeCheck) return undefined;
   return {
-    language: data.language as 'C' | 'CPP',
+    language: data.language as 'C' | 'CPP' | 'PYTHON',
     testMode: 'UNIT_TEST',
     ciConfigTemplate: data.ciConfigTemplate || undefined,
     functionSignature: data.functionSignature || undefined,
@@ -110,7 +109,7 @@ export function buildProgrammingTaskPayload(
 }
 
 interface ExistingProgrammingTask {
-  language?: 'C' | 'CPP' | null;
+  language?: 'C' | 'CPP' | 'PYTHON' | null;
   ciConfigTemplate?: string | null;
   functionSignature?: string | null;
   testFileContent?: string | null;
