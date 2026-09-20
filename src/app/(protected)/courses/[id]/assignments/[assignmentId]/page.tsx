@@ -72,15 +72,10 @@ export default async function AssignmentDetailPage({
     canManage ? listSubmissionsByAssignment(assignmentId).catch(() => []) : Promise.resolve([]),
   ]);
 
-  // Fetch latest attempt code for pre-filling the editor
-  let latestAttemptCode: string | null = null;
-  if (mySubmission?.id != null) {
-    const attempts = await listAttempts(mySubmission.id).catch(() => []);
-    const latest = attempts[attempts.length - 1];
-    if (latest != null) {
-      latestAttemptCode = latest.codeContent ?? null;
-    }
-  }
+  const myAttempts =
+    isStudent && mySubmission?.id != null
+      ? await listAttempts(mySubmission.id).catch(() => [])
+      : [];
 
   const deadline = formatDeadline(assignment?.deadline);
   const programmingTask = assignment?.programmingTask;
@@ -189,7 +184,7 @@ export default async function AssignmentDetailPage({
           </Box>
         </CardContent>
 
-        {/* Student: current submission status */}
+        {/* Student: current submission summary */}
         {isStudent && mySubmission != null && (
           <>
             <Divider />
@@ -220,15 +215,6 @@ export default async function AssignmentDetailPage({
                   size="small"
                   variant="outlined"
                 />
-                <Button
-                  component={Link}
-                  href={`/submissions/${mySubmission.id}`}
-                  size="small"
-                  variant="contained"
-                  sx={{ ml: 'auto' }}
-                >
-                  View attempts
-                </Button>
               </Box>
             </CardContent>
           </>
@@ -256,9 +242,9 @@ export default async function AssignmentDetailPage({
                 <SubmissionForm
                   assignmentId={assignmentId}
                   language={programmingTask?.language}
-                  existingSubmissionId={mySubmission?.id}
+                  initialSubmissionId={mySubmission?.id}
                   functionSignature={programmingTask?.functionSignature}
-                  lastAttemptCode={latestAttemptCode}
+                  initialAttempts={myAttempts}
                 />
               ) : (
                 <Alert severity="info">File attachment submissions are coming soon.</Alert>
