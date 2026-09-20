@@ -58,13 +58,13 @@ export const ManageGroupStudentsDialog = ({
     setLoadingMembers(true);
     try {
       const { data, error } = await apiClient.GET('/api/groups/{id}/students', {
-        params: { path: { id: group.id } },
+        params: { path: { id: group.id }, query: { size: 500 } },
       });
       if (error) {
         toast.error('Failed to load group members');
         return;
       }
-      setMembers(data ?? []);
+      setMembers(data?.content ?? []);
     } finally {
       setLoadingMembers(false);
     }

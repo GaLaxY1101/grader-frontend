@@ -117,6 +117,9 @@ export interface paths {
   '/api/submissions/{id}/grade': {
     patch: operations['updateGrade'];
   };
+  '/api/v1/users/emails': {
+    get: operations['listUserEmails'];
+  };
   '/api/v1/teachers/{id}': {
     get: operations['getTeacher'];
     delete: operations['deleteTeacher'];
@@ -571,6 +574,17 @@ export interface components {
       /** Format: date-time */
       updatedAt?: string;
     };
+    PageResponseUserResponse: {
+      content?: components['schemas']['UserResponse'][];
+      /** Format: int32 */
+      page?: number;
+      /** Format: int32 */
+      size?: number;
+      /** Format: int64 */
+      totalElements?: number;
+      /** Format: int32 */
+      totalPages?: number;
+    };
     PageResponseCourseTemplateResponse: {
       content?: components['schemas']['CourseTemplateResponse'][];
       /** Format: int32 */
@@ -607,6 +621,17 @@ export interface components {
       bestScore?: number;
       /** Format: int64 */
       latestAttemptId?: number;
+    };
+    PageResponseGroupStudentResponse: {
+      content?: components['schemas']['GroupStudentResponse'][];
+      /** Format: int32 */
+      page?: number;
+      /** Format: int32 */
+      size?: number;
+      /** Format: int64 */
+      totalElements?: number;
+      /** Format: int32 */
+      totalPages?: number;
     };
     PageResponseCourseResponse: {
       content?: components['schemas']['CourseResponse'][];
@@ -1000,11 +1025,22 @@ export interface operations {
     };
   };
   listUsers: {
+    parameters: {
+      query?: {
+        query?: string;
+        /** @description Zero-based page index (0..N) */
+        page?: number;
+        /** @description The size of the page to be returned */
+        size?: number;
+        /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+        sort?: string[];
+      };
+    };
     responses: {
       /** @description OK */
       200: {
         content: {
-          '*/*': components['schemas']['UserResponse'][];
+          '*/*': components['schemas']['PageResponseUserResponse'];
         };
       };
     };
@@ -1572,6 +1608,16 @@ export interface operations {
       };
     };
   };
+  listUserEmails: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': string[];
+        };
+      };
+    };
+  };
   getTeacher: {
     parameters: {
       path: {
@@ -1685,6 +1731,15 @@ export interface operations {
   };
   listStudents_1: {
     parameters: {
+      query?: {
+        query?: string;
+        /** @description Zero-based page index (0..N) */
+        page?: number;
+        /** @description The size of the page to be returned */
+        size?: number;
+        /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+        sort?: string[];
+      };
       path: {
         id: number;
       };
@@ -1693,7 +1748,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          '*/*': components['schemas']['GroupStudentResponse'][];
+          '*/*': components['schemas']['PageResponseGroupStudentResponse'];
         };
       };
     };

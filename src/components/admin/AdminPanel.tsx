@@ -8,15 +8,13 @@ import { GroupsTab } from './GroupsTab';
 import { StudentsTab } from './StudentsTab';
 import { UsersTab } from './UsersTab';
 
-type UserResponse = components['schemas']['UserResponse'];
 type GroupResponse = components['schemas']['GroupResponse'];
 
 interface AdminPanelProps {
-  users: UserResponse[];
   groups: GroupResponse[];
 }
 
-export const AdminPanel = ({ users, groups }: AdminPanelProps) => {
+export const AdminPanel = ({ groups }: AdminPanelProps) => {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
@@ -29,7 +27,7 @@ export const AdminPanel = ({ users, groups }: AdminPanelProps) => {
           <Tab label="Students" />
         </Tabs>
       </Box>
-      {activeTab === 0 && <UsersTab users={users} />}
+      {activeTab === 0 && <UsersTab />}
       {activeTab === 1 && <GroupsTab groups={groups} />}
       {activeTab === 2 && <StudentsTab groups={groups} />}
     </Box>

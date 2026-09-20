@@ -1,6 +1,5 @@
 import { AdminPanel } from '@/components/admin/AdminPanel';
 import { getGroups } from '@/lib/api/groups';
-import { getUsers } from '@/lib/api/users';
 import { auth } from '@/lib/server/auth';
 import { Role } from '@/utils/roles';
 import Alert from '@mui/material/Alert';
@@ -15,11 +14,10 @@ export default async function AdminPage() {
     redirect('/courses');
   }
 
-  let users: Awaited<ReturnType<typeof getUsers>>;
   let groups: Awaited<ReturnType<typeof getGroups>>;
 
   try {
-    [users, groups] = await Promise.all([getUsers(), getGroups()]);
+    groups = await getGroups();
   } catch (err) {
     const message = err instanceof Error ? err.message : 'An unexpected error occurred';
     return (
@@ -29,5 +27,5 @@ export default async function AdminPage() {
     );
   }
 
-  return <AdminPanel users={users ?? []} groups={groups ?? []} />;
+  return <AdminPanel groups={groups ?? []} />;
 }

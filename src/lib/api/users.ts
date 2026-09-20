@@ -1,9 +1,24 @@
 import { createServerClient } from '@/lib/api';
 
-export const getUsers = async () => {
+interface GetUsersParams {
+  query?: string;
+  page?: number;
+  size?: number;
+}
+
+export const getUsers = async ({ query, page = 0, size = 20 }: GetUsersParams = {}) => {
   const client = await createServerClient();
-  const { data, error } = await client.GET('/api/v1/users');
+  const { data, error } = await client.GET('/api/v1/users', {
+    params: { query: { query, page, size } },
+  });
   if (error) throw new Error('Failed to fetch users');
+  return data;
+};
+
+export const getUserEmails = async () => {
+  const client = await createServerClient();
+  const { data, error } = await client.GET('/api/v1/users/emails');
+  if (error) throw new Error('Failed to fetch user emails');
   return data;
 };
 
