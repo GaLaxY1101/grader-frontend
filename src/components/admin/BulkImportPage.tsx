@@ -50,6 +50,7 @@ type StudentInput = components['schemas']['StudentInput'];
 
 interface BulkImportPageProps {
   groups: GroupResponse[];
+  existingEmails: string[];
 }
 
 interface EditableRow {
@@ -104,7 +105,11 @@ interface RowValidation {
   isValid: boolean;
 }
 
-const validateRow = (row: EditableRow, duplicateInBatch: boolean): RowValidation => {
+const validateRow = (
+  row: EditableRow,
+  duplicateInBatch: boolean,
+  existsInDb: boolean,
+): RowValidation => {
   const email = row.email.trim();
   const firstName = row.firstName.trim();
   const lastName = row.lastName.trim();
@@ -115,6 +120,7 @@ const validateRow = (row: EditableRow, duplicateInBatch: boolean): RowValidation
     if (email === '') emailError = 'Required';
     else if (!EMAIL_RX.test(email)) emailError = 'Invalid email format';
     else if (duplicateInBatch) emailError = 'Duplicate email in batch';
+    else if (existsInDb) emailError = 'Already registered — remove this row';
   }
   const firstNameError = !isEmpty && firstName === '' ? 'Required' : null;
   const lastNameError = !isEmpty && lastName === '' ? 'Required' : null;
@@ -139,7 +145,7 @@ const isBulkImportProblem = (value: unknown): value is BulkImportProblem => {
   return typeof v.status === 'number' && typeof v.title === 'string';
 };
 
-export const BulkImportPage = ({ groups }: BulkImportPageProps) => {
+export const BulkImportPage = ({ groups, existingEmails }: BulkImportPageProps) => {
   const router = useRouter();
 
   const [rows, setRows] = useState<EditableRow[]>([emptyRow()]);
@@ -167,9 +173,18 @@ export const BulkImportPage = ({ groups }: BulkImportPageProps) => {
     return duplicates;
   }, [rows]);
 
+  const existingEmailSet = useMemo(
+    () => new Set(existingEmails.map((e) => e.trim().toLowerCase())),
+    [existingEmails],
+  );
+
   const validations = useMemo(
-    () => rows.map((row) => validateRow(row, duplicateEmails.has(row.email.trim().toLowerCase()))),
-    [rows, duplicateEmails],
+    () =>
+      rows.map((row) => {
+        const key = row.email.trim().toLowerCase();
+        return validateRow(row, duplicateEmails.has(key), key !== '' && existingEmailSet.has(key));
+      }),
+    [rows, duplicateEmails, existingEmailSet],
   );
 
   const validCount = validations.filter((v) => v.isValid).length;
@@ -214,7 +229,7 @@ export const BulkImportPage = ({ groups }: BulkImportPageProps) => {
     } else {
       const existing = rows.filter(
         (r) =>
-          !validateRow(r, false).isEmpty ||
+          !validateRow(r, false, false).isEmpty ||
           r.email.trim() !== '' ||
           r.firstName.trim() !== '' ||
           r.lastName.trim() !== '' ||

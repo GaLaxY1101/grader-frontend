@@ -1,5 +1,6 @@
 import { BulkImportPage } from '@/components/admin/BulkImportPage';
 import { getGroups } from '@/lib/api/groups';
+import { getUsers } from '@/lib/api/users';
 import { auth } from '@/lib/server/auth';
 import { Role } from '@/utils/roles';
 import Alert from '@mui/material/Alert';
@@ -15,8 +16,13 @@ export default async function BulkImportRoute() {
   }
 
   let groups: Awaited<ReturnType<typeof getGroups>>;
+  let existingEmails: string[] = [];
   try {
     groups = await getGroups();
+    const users = await getUsers();
+    existingEmails = (users ?? [])
+      .map((u) => u.email?.trim().toLowerCase())
+      .filter((e): e is string => typeof e === 'string' && e !== '');
   } catch (err) {
     const message = err instanceof Error ? err.message : 'An unexpected error occurred';
     return (
@@ -26,5 +32,5 @@ export default async function BulkImportRoute() {
     );
   }
 
-  return <BulkImportPage groups={groups ?? []} />;
+  return <BulkImportPage groups={groups ?? []} existingEmails={existingEmails} />;
 }
