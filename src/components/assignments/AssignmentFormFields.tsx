@@ -147,16 +147,6 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
             )}
           />
 
-          <TextField
-            {...register('ciConfigTemplate')}
-            label="CI config template (optional)"
-            placeholder="Leave blank to use the default template"
-            multiline
-            rows={3}
-            inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
-            fullWidth
-          />
-
           <Paper
             variant="outlined"
             sx={{
