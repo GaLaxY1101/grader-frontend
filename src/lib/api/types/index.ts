@@ -72,6 +72,15 @@ export interface paths {
     post: operations['addStudent'];
     delete: operations['removeStudent'];
   };
+  '/api/groups/{id}/students/bulk-import': {
+    post: operations['commitIntoGroup'];
+  };
+  '/api/groups/bulk-import': {
+    post: operations['commitWithNewGroup'];
+  };
+  '/api/groups/bulk-import/parse': {
+    post: operations['parse'];
+  };
   '/api/courses': {
     get: operations['listCourses'];
     post: operations['createCourse'];
@@ -409,6 +418,54 @@ export interface components {
       email?: string;
       /** Format: date-time */
       enrolledAt?: string;
+    };
+    BulkCommitRequest: {
+      students: components['schemas']['StudentInput'][];
+    };
+    StudentInput: {
+      /** Format: email */
+      email: string;
+      firstName: string;
+      lastName: string;
+      phone?: string;
+    };
+    BulkImportResult: {
+      /** Format: int64 */
+      groupId?: number;
+      /** Format: int32 */
+      totalRows?: number;
+      created?: components['schemas']['ImportedStudent'][];
+      linked?: components['schemas']['ImportedStudent'][];
+    };
+    ImportedStudent: {
+      /** Format: int64 */
+      userId?: number;
+      /** Format: int64 */
+      studentId?: number;
+      email?: string;
+    };
+    BulkCommitWithGroupRequest: {
+      group: components['schemas']['CreateGroupRequest'];
+      students: components['schemas']['StudentInput'][];
+    };
+    StudentColumnMapping: {
+      email: string;
+      firstName: string;
+      lastName: string;
+      phone?: string;
+    };
+    ParsedStudentRow: {
+      /** Format: int32 */
+      rowNumber?: number;
+      email?: string;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      errors?: string[];
+    };
+    ParsedStudentsResponse: {
+      rows?: components['schemas']['ParsedStudentRow'][];
+      detectedHeaders?: string[];
     };
     CreateCourseRequest: {
       name: string;
@@ -1190,6 +1247,60 @@ export interface operations {
       /** @description OK */
       200: {
         content: never;
+      };
+    };
+  };
+  commitIntoGroup: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BulkCommitRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['BulkImportResult'];
+        };
+      };
+    };
+  };
+  commitWithNewGroup: {
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BulkCommitWithGroupRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['BulkImportResult'];
+        };
+      };
+    };
+  };
+  parse: {
+    requestBody?: {
+      content: {
+        'multipart/form-data': {
+          meta: components['schemas']['StudentColumnMapping'];
+          /** Format: binary */
+          file: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['ParsedStudentsResponse'];
+        };
       };
     };
   };

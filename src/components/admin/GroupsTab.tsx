@@ -4,6 +4,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import type { components } from '@/lib/api/types/index';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 import PeopleIcon from '@mui/icons-material/People';
 import {
   Box,
@@ -11,6 +12,7 @@ import {
   Chip,
   IconButton,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -20,6 +22,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { CreateGroupDialog } from './CreateGroupDialog';
 import { DeleteGroupConfirmDialog } from './DeleteGroupConfirmDialog';
@@ -33,6 +36,7 @@ interface GroupsTabProps {
 }
 
 export const GroupsTab = ({ groups }: GroupsTabProps) => {
+  const router = useRouter();
   const [createOpen, setCreateOpen] = useState(false);
   const [editGroup, setEditGroup] = useState<GroupResponse | null>(null);
   const [deleteGroup, setDeleteGroup] = useState<GroupResponse | null>(null);
@@ -42,9 +46,18 @@ export const GroupsTab = ({ groups }: GroupsTabProps) => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">Groups</Typography>
-        <Button variant="contained" onClick={() => setCreateOpen(true)}>
-          Add Group
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="outlined"
+            startIcon={<FileUploadIcon />}
+            onClick={() => router.push('/admin/bulk-import')}
+          >
+            Bulk Import
+          </Button>
+          <Button variant="contained" onClick={() => setCreateOpen(true)}>
+            Add Group
+          </Button>
+        </Stack>
       </Box>
 
       {groups.length === 0 ? (
