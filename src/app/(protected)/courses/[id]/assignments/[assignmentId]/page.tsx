@@ -1,11 +1,15 @@
+import { AssignmentAttachmentsPanel } from '@/components/assignments/AssignmentAttachmentsPanel';
 import { DeleteAssignmentButton } from '@/components/assignments/DeleteAssignmentButton';
 import { EditAssignmentButton } from '@/components/assignments/EditAssignmentButton';
+import { StudentFileSubmissionPanel } from '@/components/submissions/StudentFileSubmissionPanel';
 import { SubmissionForm } from '@/components/submissions/SubmissionForm';
 import { SubmissionList } from '@/components/submissions/SubmissionList';
 import { SubmissionStatusBadge } from '@/components/submissions/SubmissionStatusBadge';
+import { listAssignmentAttachmentsServer } from '@/lib/api/assignmentAttachments.server';
 import { getAssignmentById } from '@/lib/api/assignments';
 import { getMySubmission, listAttempts, listSubmissionsByAssignment } from '@/lib/api/submissions';
 import { auth } from '@/lib/server/auth';
+import { supportsCode, supportsFiles } from '@/utils/assignmentType';
 import { Role } from '@/utils/roles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
@@ -67,9 +71,10 @@ export default async function AssignmentDetailPage({
   }
 
   // Load role-specific data in parallel
-  const [mySubmission, allSubmissions] = await Promise.all([
+  const [mySubmission, allSubmissions, assignmentAttachments] = await Promise.all([
     isStudent ? getMySubmission(assignmentId) : Promise.resolve(null),
     canManage ? listSubmissionsByAssignment(assignmentId).catch(() => []) : Promise.resolve([]),
+    listAssignmentAttachmentsServer(assignmentId).catch(() => []),
   ]);
 
   const myAttempts =
@@ -80,6 +85,9 @@ export default async function AssignmentDetailPage({
   const deadline = formatDeadline(assignment?.deadline);
   const programmingTask = assignment?.programmingTask;
   const hasCodeCheck = programmingTask != null;
+  const assignmentType = assignment?.type;
+  const acceptsCode = supportsCode(assignmentType);
+  const acceptsFiles = supportsFiles(assignmentType);
 
   return (
     <Box sx={{ p: 4 }}>
@@ -184,6 +192,15 @@ export default async function AssignmentDetailPage({
           </Box>
         </CardContent>
 
+        <Divider />
+        <CardContent sx={{ p: 3 }}>
+          <AssignmentAttachmentsPanel
+            assignmentId={assignmentId}
+            initialAttachments={assignmentAttachments}
+            canManage={canManage}
+          />
+        </CardContent>
+
         {/* Student: current submission summary */}
         {isStudent && mySubmission != null && (
           <>
@@ -238,7 +255,7 @@ export default async function AssignmentDetailPage({
                   />
                 )}
               </Box>
-              {hasCodeCheck ? (
+              {acceptsCode && hasCodeCheck && (
                 <SubmissionForm
                   assignmentId={assignmentId}
                   language={programmingTask?.language}
@@ -246,8 +263,17 @@ export default async function AssignmentDetailPage({
                   functionSignature={programmingTask?.functionSignature}
                   initialAttempts={myAttempts}
                 />
-              ) : (
-                <Alert severity="info">File attachment submissions are coming soon.</Alert>
+              )}
+              {acceptsFiles && (
+                <Box sx={{ mt: acceptsCode && hasCodeCheck ? 3 : 0 }}>
+                  <StudentFileSubmissionPanel
+                    assignmentId={assignmentId}
+                    initialSubmission={mySubmission ?? null}
+                  />
+                </Box>
+              )}
+              {!acceptsCode && !acceptsFiles && (
+                <Alert severity="info">This assignment does not accept submissions.</Alert>
               )}
             </CardContent>
           </>

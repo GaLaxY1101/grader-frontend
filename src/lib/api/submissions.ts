@@ -3,6 +3,7 @@ import { createServerClient } from '@/lib/api';
 export interface SubmissionResponse {
   id: number;
   assignmentId: number;
+  assignmentType: 'CODE' | 'FILE' | 'CODE_FILE';
   studentId: number;
   studentEmail: string;
   status: 'PENDING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR';
@@ -11,6 +12,11 @@ export interface SubmissionResponse {
   grade: number | null;
   attemptCount: number;
   latestAttemptId: number | null;
+  fileState: 'DRAFT' | 'SUBMITTED' | 'RETURNED' | 'GRADED' | null;
+  returnComment: string | null;
+  submittedAt: string | null;
+  returnedAt: string | null;
+  attachmentCount: number;
   createdAt: string;
   updatedAt: string;
 }

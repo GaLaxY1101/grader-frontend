@@ -81,6 +81,7 @@ export const EditTemplateAssignmentDialog = ({
           description: data.description || undefined,
           maxScore: data.maxScore,
           programmingTask: buildProgrammingTaskPayload(data),
+          type: data.type,
         },
       });
 

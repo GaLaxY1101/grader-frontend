@@ -1,5 +1,7 @@
+import { SubmissionAttachmentsPanel } from '@/components/submissions/SubmissionAttachmentsPanel';
 import { SubmissionStatusBadge } from '@/components/submissions/SubmissionStatusBadge';
 import { getSubmissionById, listAttempts } from '@/lib/api/submissions';
+import { supportsFiles } from '@/utils/assignmentType';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
@@ -62,11 +64,14 @@ export default async function SubmissionDetailPage({ params }: { params: { id: s
 
         {/* Hero + summary */}
         <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
             <Typography variant="h4" fontWeight={600}>
               Submission
             </Typography>
             <SubmissionStatusBadge status={submission.status} />
+            {submission.fileState != null && (
+              <Chip label={submission.fileState} size="small" color="info" />
+            )}
           </Box>
 
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -93,7 +98,37 @@ export default async function SubmissionDetailPage({ params }: { params: { id: s
               {submission.studentEmail}
             </Typography>
           </Box>
+
+          {(submission.submittedAt != null || submission.returnedAt != null) && (
+            <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              {submission.submittedAt != null && (
+                <Typography variant="caption" color="text.secondary">
+                  Turned in: {new Date(submission.submittedAt).toLocaleString()}
+                </Typography>
+              )}
+              {submission.returnedAt != null && (
+                <Typography variant="caption" color="warning.main">
+                  Returned: {new Date(submission.returnedAt).toLocaleString()}
+                </Typography>
+              )}
+            </Box>
+          )}
+
+          {submission.returnComment != null && submission.returnComment !== '' && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              <strong>Teacher note:</strong> {submission.returnComment}
+            </Alert>
+          )}
         </CardContent>
+
+        {supportsFiles(submission.assignmentType) && (
+          <>
+            <Divider />
+            <CardContent sx={{ p: 3 }}>
+              <SubmissionAttachmentsPanel submissionId={submissionId} />
+            </CardContent>
+          </>
+        )}
       </Card>
 
       {/* Attempts card */}

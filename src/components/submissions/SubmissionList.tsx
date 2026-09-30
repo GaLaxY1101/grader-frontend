@@ -1,16 +1,22 @@
 'use client';
 
+import { ReturnSubmissionDialog } from '@/components/submissions/ReturnSubmissionDialog';
 import { SubmissionGradeInput } from '@/components/submissions/SubmissionGradeInput';
 import {
   SubmissionStatusBadge,
   type SubmissionStatus,
 } from '@/components/submissions/SubmissionStatusBadge';
+import { returnSubmission } from '@/lib/api/submissionAttachments';
+import { SubmissionFileState } from '@/utils/assignmentType';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
+import { useState } from 'react';
+import { toast } from 'react-toastify';
 
 interface Submission {
   id: number;
@@ -21,6 +27,8 @@ interface Submission {
   grade: number | null;
   attemptCount: number;
   updatedAt: string;
+  fileState?: SubmissionFileState | null;
+  attachmentCount?: number;
 }
 
 interface SubmissionListProps {
@@ -29,7 +37,34 @@ interface SubmissionListProps {
   canGrade: boolean;
 }
 
+const fileStateColor = (
+  state: SubmissionFileState | null | undefined,
+): 'default' | 'info' | 'warning' | 'success' => {
+  switch (state) {
+    case SubmissionFileState.SUBMITTED:
+      return 'info';
+    case SubmissionFileState.RETURNED:
+      return 'warning';
+    case SubmissionFileState.GRADED:
+      return 'success';
+    default:
+      return 'default';
+  }
+};
+
 export const SubmissionList = ({ submissions, maxScore, canGrade }: SubmissionListProps) => {
+  const [returnTarget, setReturnTarget] = useState<number | null>(null);
+
+  const handleReturn = async (comment: string | undefined) => {
+    if (returnTarget == null) return;
+    try {
+      await returnSubmission(returnTarget, comment);
+      toast.success('Submission returned');
+    } catch {
+      toast.error('Return failed');
+    }
+  };
+
   if (submissions.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary">
@@ -79,9 +114,29 @@ export const SubmissionList = ({ submissions, maxScore, canGrade }: SubmissionLi
             </Box>
 
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
+              {sub.fileState != null && (
+                <Chip
+                  label={sub.fileState}
+                  size="small"
+                  color={fileStateColor(sub.fileState)}
+                  variant="filled"
+                />
+              )}
+              {(sub.attachmentCount ?? 0) > 0 && (
+                <Chip
+                  label={`${sub.attachmentCount} file${sub.attachmentCount === 1 ? '' : 's'}`}
+                  size="small"
+                  variant="outlined"
+                />
+              )}
               <SubmissionStatusBadge status={sub.status} />
               {sub.bestScore != null && (
                 <Chip label={`Best: ${sub.bestScore}`} size="small" variant="outlined" />
+              )}
+              {canGrade && sub.fileState === SubmissionFileState.SUBMITTED && (
+                <Button size="small" variant="outlined" onClick={() => setReturnTarget(sub.id)}>
+                  Return
+                </Button>
               )}
               {canGrade && (
                 <SubmissionGradeInput
@@ -95,6 +150,11 @@ export const SubmissionList = ({ submissions, maxScore, canGrade }: SubmissionLi
           {index < submissions.length - 1 && <Divider />}
         </Box>
       ))}
+      <ReturnSubmissionDialog
+        open={returnTarget != null}
+        onClose={() => setReturnTarget(null)}
+        onConfirm={handleReturn}
+      />
     </Box>
   );
 };

@@ -1,5 +1,6 @@
 'use client';
 
+import { AssignmentType, supportsCode } from '@/utils/assignmentType';
 import Editor from '@monaco-editor/react';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -39,7 +40,15 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
 
   const enableCodeCheck = watch('enableCodeCheck');
   const language = watch('language');
+  const type = watch('type');
+  const codeAllowed = supportsCode(type);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!codeAllowed && enableCodeCheck) {
+      setValue('enableCodeCheck', false, { shouldDirty: true });
+    }
+  }, [codeAllowed, enableCodeCheck, setValue]);
 
   const monacoLanguage = language === 'PYTHON' ? 'python' : language === 'C' ? 'c' : 'cpp';
   const testFileName =
@@ -107,236 +116,261 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
         />
       )}
 
-      <Divider />
-
       <Controller
-        name="enableCodeCheck"
+        name="type"
         control={control}
         render={({ field }) => (
-          <FormControlLabel
-            control={
-              <Switch checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />
-            }
-            label={
-              <Box>
-                <Typography variant="subtitle2">Enable Code Check</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Students submit code that is compiled against a teacher-provided test file.
-                </Typography>
-              </Box>
-            }
-          />
+          <FormControl fullWidth>
+            <InputLabel>Assignment type</InputLabel>
+            <Select {...field} label="Assignment type">
+              <MenuItem value={AssignmentType.CODE}>Code only</MenuItem>
+              <MenuItem value={AssignmentType.FILE}>Files only</MenuItem>
+              <MenuItem value={AssignmentType.CODE_FILE}>Code + files</MenuItem>
+            </Select>
+            <FormHelperText>
+              File and hybrid assignments let students attach files reviewed manually.
+            </FormHelperText>
+          </FormControl>
         )}
       />
 
-      <Collapse in={enableCodeCheck} unmountOnExit timeout={600}>
-        <Stack spacing={2.5}>
+      <Divider />
+
+      {codeAllowed && (
+        <>
           <Controller
-            name="language"
+            name="enableCodeCheck"
             control={control}
             render={({ field }) => (
-              <FormControl fullWidth required error={errors.language != null}>
-                <InputLabel>Language</InputLabel>
-                <Select {...field} label="Language" value={field.value ?? ''}>
-                  <MenuItem value="C">C</MenuItem>
-                  <MenuItem value="CPP">C++</MenuItem>
-                  <MenuItem value="PYTHON">Python</MenuItem>
-                </Select>
-                {errors.language && <FormHelperText>{errors.language.message}</FormHelperText>}
-              </FormControl>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="subtitle2">Enable Code Check</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Students submit code that is compiled against a teacher-provided test file.
+                    </Typography>
+                  </Box>
+                }
+              />
             )}
           />
 
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2,
-              mt: 1,
-              borderColor: errors.functionSignature ? 'error.main' : 'divider',
-              bgcolor: 'background.default',
-            }}
-          >
-            <Box
-              role="button"
-              tabIndex={0}
-              onClick={() => setSignatureOpen((v) => !v)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setSignatureOpen((v) => !v);
-                }
-              }}
-              aria-expanded={signatureOpen}
-              aria-label={signatureOpen ? 'Collapse editor' : 'Expand editor'}
-              sx={{
-                display: 'block',
-                width: '100%',
-                cursor: 'pointer',
-                userSelect: 'none',
-                borderRadius: 1,
-                mx: -1,
-                px: 1,
-                py: 0.5,
-                mb: 1,
-                '&:hover': { bgcolor: 'action.hover' },
-                '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                {signatureOpen ? (
-                  <ExpandLessIcon fontSize="small" />
-                ) : (
-                  <ExpandMoreIcon fontSize="small" />
-                )}
-                <Typography variant="subtitle2">Function Signature / Template Code</Typography>
-              </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                This code will be pre-filled in the student&apos;s editor.
-              </Typography>
-            </Box>
-            <Collapse in={signatureOpen} unmountOnExit={false}>
+          <Collapse in={enableCodeCheck} unmountOnExit timeout={600}>
+            <Stack spacing={2.5}>
               <Controller
-                name="functionSignature"
+                name="language"
                 control={control}
                 render={({ field }) => (
-                  <Box
-                    sx={{
-                      border: '1px solid',
-                      borderColor: errors.functionSignature ? 'error.main' : 'divider',
-                      borderRadius: 1,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <Editor
-                      height="350px"
-                      language={monacoLanguage}
-                      theme="vs"
-                      value={field.value ?? ''}
-                      onChange={(value) => field.onChange(value ?? '')}
-                      options={{
-                        minimap: { enabled: false },
-                        fontSize: 13,
-                        tabSize: 4,
-                        lineNumbers: 'on',
-                        lineNumbersMinChars: 3,
-                        wordWrap: 'on',
-                        scrollBeyondLastLine: false,
-                        padding: { top: 12, bottom: 12 },
-                        scrollbar: { alwaysConsumeMouseWheel: false },
-                      }}
-                    />
-                  </Box>
+                  <FormControl fullWidth required error={errors.language != null}>
+                    <InputLabel>Language</InputLabel>
+                    <Select {...field} label="Language" value={field.value ?? ''}>
+                      <MenuItem value="C">C</MenuItem>
+                      <MenuItem value="CPP">C++</MenuItem>
+                      <MenuItem value="PYTHON">Python</MenuItem>
+                    </Select>
+                    {errors.language && <FormHelperText>{errors.language.message}</FormHelperText>}
+                  </FormControl>
                 )}
               />
-            </Collapse>
-            {errors.functionSignature && (
-              <FormHelperText error>{errors.functionSignature.message}</FormHelperText>
-            )}
-          </Paper>
 
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2,
-              borderColor: errors.testFileContent ? 'error.main' : 'divider',
-              bgcolor: 'background.default',
-            }}
-          >
-            <Box
-              role="button"
-              tabIndex={0}
-              onClick={() => setTestFileOpen((v) => !v)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setTestFileOpen((v) => !v);
-                }
-              }}
-              aria-expanded={testFileOpen}
-              aria-label={testFileOpen ? 'Collapse editor' : 'Expand editor'}
-              sx={{
-                display: 'block',
-                width: '100%',
-                cursor: 'pointer',
-                userSelect: 'none',
-                borderRadius: 1,
-                mx: -1,
-                px: 1,
-                py: 0.5,
-                mb: 1,
-                '&:hover': { bgcolor: 'action.hover' },
-                '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                {testFileOpen ? (
-                  <ExpandLessIcon fontSize="small" />
-                ) : (
-                  <ExpandMoreIcon fontSize="small" />
-                )}
-                <Typography variant="subtitle2">Test File ({testFileName})</Typography>
-              </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                {solutionImportHint}
-              </Typography>
-            </Box>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={testFileAccept}
-              hidden
-              onChange={handleTestFileUpload}
-            />
-            <Collapse in={testFileOpen} unmountOnExit={false}>
-              <Controller
-                name="testFileContent"
-                control={control}
-                render={({ field }) => (
-                  <Box
-                    sx={{
-                      border: '1px solid',
-                      borderColor: errors.testFileContent ? 'error.main' : 'divider',
-                      borderRadius: 1,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <Editor
-                      height="500px"
-                      language={monacoLanguage}
-                      theme="vs"
-                      value={field.value ?? ''}
-                      onChange={(value) => field.onChange(value ?? '')}
-                      options={{
-                        minimap: { enabled: false },
-                        fontSize: 13,
-                        tabSize: 4,
-                        lineNumbers: 'on',
-                        lineNumbersMinChars: 3,
-                        wordWrap: 'on',
-                        scrollBeyondLastLine: false,
-                        padding: { top: 12, bottom: 12 },
-                        scrollbar: { alwaysConsumeMouseWheel: false },
-                      }}
-                    />
-                  </Box>
-                )}
-              />
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => fileInputRef.current?.click()}
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  mt: 1,
+                  borderColor: errors.functionSignature ? 'error.main' : 'divider',
+                  bgcolor: 'background.default',
+                }}
+              >
+                <Box
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSignatureOpen((v) => !v)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSignatureOpen((v) => !v);
+                    }
+                  }}
+                  aria-expanded={signatureOpen}
+                  aria-label={signatureOpen ? 'Collapse editor' : 'Expand editor'}
+                  sx={{
+                    display: 'block',
+                    width: '100%',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    borderRadius: 1,
+                    mx: -1,
+                    px: 1,
+                    py: 0.5,
+                    mb: 1,
+                    '&:hover': { bgcolor: 'action.hover' },
+                    '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
+                  }}
                 >
-                  Upload File
-                </Button>
-              </Box>
-            </Collapse>
-            {errors.testFileContent && (
-              <FormHelperText error>{errors.testFileContent.message}</FormHelperText>
-            )}
-          </Paper>
-        </Stack>
-      </Collapse>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {signatureOpen ? (
+                      <ExpandLessIcon fontSize="small" />
+                    ) : (
+                      <ExpandMoreIcon fontSize="small" />
+                    )}
+                    <Typography variant="subtitle2">Function Signature / Template Code</Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    This code will be pre-filled in the student&apos;s editor.
+                  </Typography>
+                </Box>
+                <Collapse in={signatureOpen} unmountOnExit={false}>
+                  <Controller
+                    name="functionSignature"
+                    control={control}
+                    render={({ field }) => (
+                      <Box
+                        sx={{
+                          border: '1px solid',
+                          borderColor: errors.functionSignature ? 'error.main' : 'divider',
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Editor
+                          height="350px"
+                          language={monacoLanguage}
+                          theme="vs"
+                          value={field.value ?? ''}
+                          onChange={(value) => field.onChange(value ?? '')}
+                          options={{
+                            minimap: { enabled: false },
+                            fontSize: 13,
+                            tabSize: 4,
+                            lineNumbers: 'on',
+                            lineNumbersMinChars: 3,
+                            wordWrap: 'on',
+                            scrollBeyondLastLine: false,
+                            padding: { top: 12, bottom: 12 },
+                            scrollbar: { alwaysConsumeMouseWheel: false },
+                          }}
+                        />
+                      </Box>
+                    )}
+                  />
+                </Collapse>
+                {errors.functionSignature && (
+                  <FormHelperText error>{errors.functionSignature.message}</FormHelperText>
+                )}
+              </Paper>
+
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderColor: errors.testFileContent ? 'error.main' : 'divider',
+                  bgcolor: 'background.default',
+                }}
+              >
+                <Box
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setTestFileOpen((v) => !v)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setTestFileOpen((v) => !v);
+                    }
+                  }}
+                  aria-expanded={testFileOpen}
+                  aria-label={testFileOpen ? 'Collapse editor' : 'Expand editor'}
+                  sx={{
+                    display: 'block',
+                    width: '100%',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    borderRadius: 1,
+                    mx: -1,
+                    px: 1,
+                    py: 0.5,
+                    mb: 1,
+                    '&:hover': { bgcolor: 'action.hover' },
+                    '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {testFileOpen ? (
+                      <ExpandLessIcon fontSize="small" />
+                    ) : (
+                      <ExpandMoreIcon fontSize="small" />
+                    )}
+                    <Typography variant="subtitle2">Test File ({testFileName})</Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    {solutionImportHint}
+                  </Typography>
+                </Box>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={testFileAccept}
+                  hidden
+                  onChange={handleTestFileUpload}
+                />
+                <Collapse in={testFileOpen} unmountOnExit={false}>
+                  <Controller
+                    name="testFileContent"
+                    control={control}
+                    render={({ field }) => (
+                      <Box
+                        sx={{
+                          border: '1px solid',
+                          borderColor: errors.testFileContent ? 'error.main' : 'divider',
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Editor
+                          height="500px"
+                          language={monacoLanguage}
+                          theme="vs"
+                          value={field.value ?? ''}
+                          onChange={(value) => field.onChange(value ?? '')}
+                          options={{
+                            minimap: { enabled: false },
+                            fontSize: 13,
+                            tabSize: 4,
+                            lineNumbers: 'on',
+                            lineNumbersMinChars: 3,
+                            wordWrap: 'on',
+                            scrollBeyondLastLine: false,
+                            padding: { top: 12, bottom: 12 },
+                            scrollbar: { alwaysConsumeMouseWheel: false },
+                          }}
+                        />
+                      </Box>
+                    )}
+                  />
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Upload File
+                    </Button>
+                  </Box>
+                </Collapse>
+                {errors.testFileContent && (
+                  <FormHelperText error>{errors.testFileContent.message}</FormHelperText>
+                )}
+              </Paper>
+            </Stack>
+          </Collapse>
+        </>
+      )}
     </Stack>
   );
 };

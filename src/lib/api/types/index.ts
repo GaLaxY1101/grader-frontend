@@ -64,6 +64,16 @@ export interface paths {
   '/api/templates/{id}/copy': {
     post: operations['copyTemplate'];
   };
+  '/api/template-assignments/{id}/attachments': {
+    get: operations['listAttachments'];
+    post: operations['uploadAttachments'];
+  };
+  '/api/submissions/{id}/turn-in': {
+    post: operations['turnIn'];
+  };
+  '/api/submissions/{id}/return': {
+    post: operations['returnSubmission'];
+  };
   '/api/groups': {
     get: operations['listGroups'];
     post: operations['createGroup'];
@@ -107,9 +117,16 @@ export interface paths {
   '/api/compile/validate': {
     post: operations['validateCompilation'];
   };
+  '/api/assignments/{id}/attachments': {
+    get: operations['listAttachments_1'];
+    post: operations['uploadAttachments_1'];
+  };
   '/api/assignments/{assignmentId}/submissions': {
     get: operations['listByAssignment'];
     post: operations['createSubmission'];
+  };
+  '/api/assignments/{assignmentId}/submissions/attachments': {
+    post: operations['uploadSubmissionAttachments'];
   };
   '/api/assignments/{assignmentId}/compile': {
     post: operations['validateSubmissionCompilation'];
@@ -131,6 +148,9 @@ export interface paths {
     get: operations['getStudent'];
     delete: operations['deleteStudent'];
   };
+  '/api/template-assignments/{id}/attachments/{attachmentId}/download': {
+    get: operations['downloadAttachment'];
+  };
   '/api/submissions/{submissionId}/attempts': {
     get: operations['listAttempts'];
   };
@@ -139,6 +159,12 @@ export interface paths {
   };
   '/api/submissions/{id}/status': {
     get: operations['getStatus'];
+  };
+  '/api/submissions/{id}/attachments': {
+    get: operations['listSubmissionAttachments'];
+  };
+  '/api/submissions/{id}/attachments/{attachmentId}/download': {
+    get: operations['downloadSubmissionAttachment'];
   };
   '/api/groups/{id}/students': {
     get: operations['listStudents_1'];
@@ -161,11 +187,23 @@ export interface paths {
   '/api/attempts/{attemptId}/status': {
     get: operations['getAttemptStatus'];
   };
+  '/api/assignments/{id}/attachments/{attachmentId}/download': {
+    get: operations['downloadAttachment_1'];
+  };
   '/api/assignments/{assignmentId}/submissions/my': {
     get: operations['getMySubmission'];
   };
   '/api/templates/{templateId}/shares/{teacherId}': {
     delete: operations['unshareTemplate'];
+  };
+  '/api/template-assignments/{id}/attachments/{attachmentId}': {
+    delete: operations['deleteAttachment'];
+  };
+  '/api/submissions/{id}/attachments/{attachmentId}': {
+    delete: operations['deleteSubmissionAttachment'];
+  };
+  '/api/assignments/{id}/attachments/{attachmentId}': {
+    delete: operations['deleteAttachment_1'];
   };
 }
 
@@ -228,6 +266,8 @@ export interface components {
       /** Format: int32 */
       maxScore?: number;
       programmingTask?: components['schemas']['ProgrammingTaskDetails'];
+      /** @enum {string} */
+      type?: 'CODE' | 'FILE' | 'CODE_FILE';
     };
     TemplateAssignmentResponse: {
       /** Format: int64 */
@@ -238,11 +278,15 @@ export interface components {
       description?: string;
       /** Format: int32 */
       maxScore?: number;
+      /** @enum {string} */
+      type?: 'CODE' | 'FILE' | 'CODE_FILE';
       /** Format: date-time */
       createdAt?: string;
       /** Format: date-time */
       updatedAt?: string;
       programmingTask?: components['schemas']['ProgrammingTaskDetails'];
+      /** Format: int32 */
+      attachmentCount?: number;
     };
     UpdateGroupRequest: {
       code: string;
@@ -305,6 +349,8 @@ export interface components {
       /** Format: date-time */
       deadline?: string;
       isActive?: boolean;
+      /** @enum {string} */
+      type?: 'CODE' | 'FILE' | 'CODE_FILE';
       /** Format: int64 */
       createdBy?: number;
       /** Format: date-time */
@@ -312,6 +358,8 @@ export interface components {
       /** Format: date-time */
       updatedAt?: string;
       programmingTask?: components['schemas']['ProgrammingTaskDetails'];
+      /** Format: int32 */
+      attachmentCount?: number;
     };
     GitLabWebhookPayload: {
       object_kind?: string;
@@ -405,6 +453,67 @@ export interface components {
       /** Format: int32 */
       maxScore?: number;
       programmingTask?: components['schemas']['ProgrammingTaskDetails'];
+      /** @enum {string} */
+      type?: 'CODE' | 'FILE' | 'CODE_FILE';
+    };
+    AttachmentSummary: {
+      /** Format: int64 */
+      id?: number;
+      filename?: string;
+      contentType?: string;
+      /** Format: int64 */
+      sizeBytes?: number;
+      /** Format: date-time */
+      uploadedAt?: string;
+      /** Format: int64 */
+      uploadedById?: number;
+    };
+    UploadFailure: {
+      filename?: string;
+      reason?: string;
+    };
+    UploadResponse: {
+      uploaded?: components['schemas']['AttachmentSummary'][];
+      failed?: components['schemas']['UploadFailure'][];
+    };
+    SubmissionResponse: {
+      /** Format: int64 */
+      id?: number;
+      /** Format: int64 */
+      assignmentId?: number;
+      /** @enum {string} */
+      assignmentType?: 'CODE' | 'FILE' | 'CODE_FILE';
+      /** Format: int64 */
+      studentId?: number;
+      studentEmail?: string;
+      /** @enum {string} */
+      status?: 'PENDING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR';
+      /** Format: int32 */
+      score?: number;
+      /** Format: int32 */
+      bestScore?: number;
+      /** Format: int32 */
+      grade?: number;
+      /** Format: int32 */
+      attemptCount?: number;
+      /** Format: int64 */
+      latestAttemptId?: number;
+      /** @enum {string} */
+      fileState?: 'DRAFT' | 'SUBMITTED' | 'RETURNED' | 'GRADED';
+      returnComment?: string;
+      /** Format: date-time */
+      submittedAt?: string;
+      /** Format: date-time */
+      returnedAt?: string;
+      /** Format: int32 */
+      attachmentCount?: number;
+      /** Format: date-time */
+      createdAt?: string;
+      /** Format: date-time */
+      updatedAt?: string;
+    };
+    ReturnSubmissionRequest: {
+      comment?: string;
     };
     CreateGroupRequest: {
       code: string;
@@ -509,6 +618,8 @@ export interface components {
       /** Format: date-time */
       deadline?: string;
       programmingTask?: components['schemas']['ProgrammingTaskDetails'];
+      /** @enum {string} */
+      type?: 'CODE' | 'FILE' | 'CODE_FILE';
     };
     CompileRequest: {
       solutionCode: string;
@@ -545,34 +656,14 @@ export interface components {
       /** Format: date-time */
       updatedAt?: string;
     };
+    SubmissionUploadResult: {
+      /** Format: int64 */
+      submissionId?: number;
+      upload?: components['schemas']['UploadResponse'];
+    };
     UpdateGradeRequest: {
       /** Format: int32 */
       grade?: number;
-    };
-    SubmissionResponse: {
-      /** Format: int64 */
-      id?: number;
-      /** Format: int64 */
-      assignmentId?: number;
-      /** Format: int64 */
-      studentId?: number;
-      studentEmail?: string;
-      /** @enum {string} */
-      status?: 'PENDING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR';
-      /** Format: int32 */
-      score?: number;
-      /** Format: int32 */
-      bestScore?: number;
-      /** Format: int32 */
-      grade?: number;
-      /** Format: int32 */
-      attemptCount?: number;
-      /** Format: int64 */
-      latestAttemptId?: number;
-      /** Format: date-time */
-      createdAt?: string;
-      /** Format: date-time */
-      updatedAt?: string;
     };
     PageResponseUserResponse: {
       content?: components['schemas']['UserResponse'][];
@@ -609,6 +700,9 @@ export interface components {
       /** Format: date-time */
       updatedAt?: string;
       assignments?: components['schemas']['TemplateAssignmentResponse'][];
+    };
+    DownloadUrl: {
+      url?: string;
     };
     SubmissionStatusResponse: {
       /** Format: int64 */
@@ -1231,6 +1325,78 @@ export interface operations {
       };
     };
   };
+  listAttachments: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['AttachmentSummary'][];
+        };
+      };
+    };
+  };
+  uploadAttachments: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    requestBody?: {
+      content: {
+        'multipart/form-data': {
+          files: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['UploadResponse'];
+        };
+      };
+    };
+  };
+  turnIn: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['SubmissionResponse'];
+        };
+      };
+    };
+  };
+  returnSubmission: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['ReturnSubmissionRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['SubmissionResponse'];
+        };
+      };
+    };
+  };
   listGroups: {
     responses: {
       /** @description OK */
@@ -1533,6 +1699,43 @@ export interface operations {
       };
     };
   };
+  listAttachments_1: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['AttachmentSummary'][];
+        };
+      };
+    };
+  };
+  uploadAttachments_1: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    requestBody?: {
+      content: {
+        'multipart/form-data': {
+          files: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['UploadResponse'];
+        };
+      };
+    };
+  };
   listByAssignment: {
     parameters: {
       path: {
@@ -1564,6 +1767,28 @@ export interface operations {
       200: {
         content: {
           '*/*': components['schemas']['AttemptResponse'];
+        };
+      };
+    };
+  };
+  uploadSubmissionAttachments: {
+    parameters: {
+      path: {
+        assignmentId: number;
+      };
+    };
+    requestBody?: {
+      content: {
+        'multipart/form-data': {
+          files: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['SubmissionUploadResult'];
         };
       };
     };
@@ -1684,6 +1909,22 @@ export interface operations {
       };
     };
   };
+  downloadAttachment: {
+    parameters: {
+      path: {
+        id: number;
+        attachmentId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['DownloadUrl'];
+        };
+      };
+    };
+  };
   listAttempts: {
     parameters: {
       path: {
@@ -1725,6 +1966,37 @@ export interface operations {
       200: {
         content: {
           '*/*': components['schemas']['SubmissionStatusResponse'];
+        };
+      };
+    };
+  };
+  listSubmissionAttachments: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['AttachmentSummary'][];
+        };
+      };
+    };
+  };
+  downloadSubmissionAttachment: {
+    parameters: {
+      path: {
+        id: number;
+        attachmentId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['DownloadUrl'];
         };
       };
     };
@@ -1843,6 +2115,22 @@ export interface operations {
       };
     };
   };
+  downloadAttachment_1: {
+    parameters: {
+      path: {
+        id: number;
+        attachmentId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['DownloadUrl'];
+        };
+      };
+    };
+  };
   getMySubmission: {
     parameters: {
       path: {
@@ -1863,6 +2151,48 @@ export interface operations {
       path: {
         templateId: number;
         teacherId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: never;
+      };
+    };
+  };
+  deleteAttachment: {
+    parameters: {
+      path: {
+        id: number;
+        attachmentId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: never;
+      };
+    };
+  };
+  deleteSubmissionAttachment: {
+    parameters: {
+      path: {
+        id: number;
+        attachmentId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: never;
+      };
+    };
+  };
+  deleteAttachment_1: {
+    parameters: {
+      path: {
+        id: number;
+        attachmentId: number;
       };
     };
     responses: {
