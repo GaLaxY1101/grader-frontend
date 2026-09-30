@@ -1,3 +1,4 @@
+import { AuthErrorGuard } from '@/components/common/AuthErrorGuard';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { auth } from '@/lib/server/auth';
 import { Role, type Role as RoleType } from '@/utils/roles';
@@ -20,6 +21,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
   return (
     <MainLayout role={primaryRole} userName={userName} userEmail={userEmail}>
+      <AuthErrorGuard />
       {children}
     </MainLayout>
   );
