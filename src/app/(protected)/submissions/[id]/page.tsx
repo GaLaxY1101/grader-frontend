@@ -1,5 +1,6 @@
 import { SubmissionAttachmentsPanel } from '@/components/submissions/SubmissionAttachmentsPanel';
 import { SubmissionStatusBadge } from '@/components/submissions/SubmissionStatusBadge';
+import { TestReportView } from '@/components/submissions/TestReportView';
 import { getSubmissionById, listAttempts } from '@/lib/api/submissions';
 import { supportsFiles } from '@/utils/assignmentType';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -37,6 +38,8 @@ export default async function SubmissionDetailPage({ params }: { params: { id: s
       </Box>
     );
   }
+
+  const latestAttempt = attempts[0] ?? null;
 
   return (
     <Box sx={{ p: 4 }}>
@@ -179,6 +182,21 @@ export default async function SubmissionDetailPage({ params }: { params: { id: s
           )}
         </CardContent>
       </Card>
+
+      {latestAttempt != null &&
+        (latestAttempt.testReport?.detailsAvailable || latestAttempt.pipelineOutput != null) && (
+          <Card sx={{ mt: 4 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+                Latest results (attempt #{latestAttempt.attemptNumber})
+              </Typography>
+              <TestReportView
+                report={latestAttempt.testReport}
+                pipelineOutput={latestAttempt.pipelineOutput}
+              />
+            </CardContent>
+          </Card>
+        )}
     </Box>
   );
 }

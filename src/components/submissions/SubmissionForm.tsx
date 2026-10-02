@@ -5,6 +5,7 @@ import {
   SubmissionStatusBadge,
   type SubmissionStatus,
 } from '@/components/submissions/SubmissionStatusBadge';
+import { TestReportView } from '@/components/submissions/TestReportView';
 import { apiClient } from '@/lib/api/client';
 import type { AttemptResponse } from '@/lib/api/submissions';
 import Editor from '@monaco-editor/react';
@@ -271,42 +272,30 @@ export const SubmissionForm = ({
             ))}
           </List>
 
-          {latestAttempt?.pipelineOutput != null && (
-            <Box sx={{ mt: 3 }}>
-              <Typography
-                variant="overline"
-                sx={{
-                  fontSize: '0.6875rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.08em',
-                  color: 'text.secondary',
-                  mb: 1.5,
-                  display: 'block',
-                }}
-              >
-                Latest pipeline output
-              </Typography>
-              <Box
-                component="pre"
-                sx={{
-                  bgcolor: 'grey.900',
-                  color: 'grey.100',
-                  p: 2,
-                  borderRadius: 1,
-                  overflowX: 'auto',
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                  maxHeight: 400,
-                  overflowY: 'auto',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  m: 0,
-                }}
-              >
-                {latestAttempt.pipelineOutput}
+          {latestAttempt != null &&
+            !running &&
+            (latestAttempt.testReport?.detailsAvailable ||
+              latestAttempt.pipelineOutput != null) && (
+              <Box sx={{ mt: 3 }}>
+                <Typography
+                  variant="overline"
+                  sx={{
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    color: 'text.secondary',
+                    mb: 1.5,
+                    display: 'block',
+                  }}
+                >
+                  Latest results (attempt #{latestAttempt.attemptNumber})
+                </Typography>
+                <TestReportView
+                  report={latestAttempt.testReport}
+                  pipelineOutput={latestAttempt.pipelineOutput}
+                />
               </Box>
-            </Box>
-          )}
+            )}
         </Box>
       )}
 

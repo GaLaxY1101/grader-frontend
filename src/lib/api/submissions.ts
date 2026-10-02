@@ -1,4 +1,9 @@
 import { createServerClient } from '@/lib/api';
+import type { components } from '@/lib/api/types';
+
+/** Structured per-test results of an attempt, filtered by the task's feedback level. */
+export type TestReport = components['schemas']['TestReportResponse'];
+export type TestCaseResult = components['schemas']['TestCaseResponse'];
 
 export interface SubmissionResponse {
   id: number;
@@ -30,6 +35,7 @@ export interface AttemptResponse {
   codeContent: string | null;
   gitlabPipelineId: number | null;
   pipelineOutput: string | null;
+  testReport?: TestReport | null;
   submittedAt: string;
   createdAt: string;
   updatedAt: string;

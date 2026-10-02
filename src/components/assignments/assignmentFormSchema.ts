@@ -15,6 +15,8 @@ export const assignmentFormSchema = z
     testFileContent: z.string().optional(),
     /** Teacher's correct solution; validates AI-generated tests. Never shown to students. */
     referenceSolution: z.string().optional(),
+    /** How much per-test feedback students see; teachers always see everything. */
+    feedbackLevel: z.enum(['FULL', 'NAMES_ONLY', 'SUMMARY']),
   })
   .superRefine((data, ctx) => {
     if (!supportsCode(data.type)) {
@@ -54,25 +56,26 @@ export const assignmentFormSchema = z
 export type AssignmentFormValues = z.infer<typeof assignmentFormSchema>;
 
 const TEST_FILE_TEMPLATES: Record<'C' | 'CPP' | 'PYTHON', string> = {
-  CPP: `#include "solution.cpp"
-#include <cassert>
+  CPP: `#include "grader_test.h"
+#include "solution.cpp"
 
-int main() {
-    return 0;
+TEST_CASE(test_example) {
+    EXPECT_EQ(5, add(2, 3));
 }
 `,
-  C: `#include "solution.c"
-#include <assert.h>
+  C: `#include "grader_test.h"
+#include "solution.c"
 
-int main(void) {
-    return 0;
+TEST_CASE(test_example) {
+    EXPECT_EQ(5, add(2, 3));
 }
 `,
   PYTHON: `from solution import *
 
 
 def test_example():
-    assert True
+    actual = add(2, 3)
+    assert actual == 5
 `,
 };
 
@@ -93,7 +96,10 @@ export type ProgrammingTaskPayload = {
   functionSignature?: string;
   testFileContent?: string;
   referenceSolution?: string;
+  feedbackLevel: FeedbackLevel;
 };
+
+export type FeedbackLevel = 'FULL' | 'NAMES_ONLY' | 'SUMMARY';
 
 /**
  * Converts an ISO datetime string to the YYYY-MM-DDTHH:mm format required by
@@ -121,6 +127,7 @@ export function buildProgrammingTaskPayload(
     functionSignature: data.functionSignature || undefined,
     testFileContent: data.testFileContent || undefined,
     referenceSolution: data.referenceSolution || undefined,
+    feedbackLevel: data.feedbackLevel,
   };
 }
 
@@ -130,6 +137,7 @@ interface ExistingProgrammingTask {
   functionSignature?: string | null;
   testFileContent?: string | null;
   referenceSolution?: string | null;
+  feedbackLevel?: FeedbackLevel | null;
 }
 
 interface ExistingAssignmentValues {
@@ -159,6 +167,7 @@ export function toFormDefaults(existing: ExistingAssignmentValues): AssignmentFo
     functionSignature: task?.functionSignature ?? '',
     testFileContent: task?.testFileContent ?? '',
     referenceSolution: task?.referenceSolution ?? '',
+    feedbackLevel: task?.feedbackLevel ?? 'FULL',
   };
 }
 
@@ -173,4 +182,5 @@ export const emptyFormDefaults: AssignmentFormValues = {
   functionSignature: '',
   testFileContent: '',
   referenceSolution: '',
+  feedbackLevel: 'FULL',
 };

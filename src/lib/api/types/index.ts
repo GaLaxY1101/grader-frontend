@@ -266,6 +266,8 @@ export interface components {
       functionSignature?: string;
       testFileContent?: string;
       referenceSolution?: string;
+      /** @enum {string} */
+      feedbackLevel?: 'FULL' | 'NAMES_ONLY' | 'SUMMARY';
     };
     UpdateTemplateAssignmentRequest: {
       title: string;
@@ -681,12 +683,36 @@ export interface components {
       /** Format: int64 */
       gitlabPipelineId?: number;
       pipelineOutput?: string;
+      testReport?: components['schemas']['TestReportResponse'];
       /** Format: date-time */
       submittedAt?: string;
       /** Format: date-time */
       createdAt?: string;
       /** Format: date-time */
       updatedAt?: string;
+    };
+    TestCaseResponse: {
+      name?: string;
+      /** @enum {string} */
+      status?: 'PASSED' | 'FAILED' | 'ERROR' | 'CRASHED' | 'TIMEOUT' | 'NOT_RUN' | 'SKIPPED';
+      expected?: string;
+      actual?: string;
+      message?: string;
+      /** Format: int64 */
+      durationMs?: number;
+    };
+    TestReportResponse: {
+      /** @enum {string} */
+      status?: 'COMPLETED' | 'COMPILE_ERROR' | 'CRASHED' | 'TIMEOUT' | 'UNKNOWN';
+      /** Format: int32 */
+      passed?: number;
+      /** Format: int32 */
+      total?: number;
+      compileOutput?: string;
+      detailsAvailable?: boolean;
+      /** @enum {string} */
+      feedbackLevel?: 'FULL' | 'NAMES_ONLY' | 'SUMMARY';
+      tests?: components['schemas']['TestCaseResponse'][];
     };
     SubmissionUploadResult: {
       /** Format: int64 */
@@ -875,6 +901,7 @@ export interface components {
       /** Format: int32 */
       score?: number;
       pipelineOutput?: string;
+      testReport?: components['schemas']['TestReportResponse'];
     };
   };
   responses: never;

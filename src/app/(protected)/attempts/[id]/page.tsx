@@ -4,8 +4,10 @@ import {
   SubmissionStatusBadge,
   type SubmissionStatus,
 } from '@/components/submissions/SubmissionStatusBadge';
+import { TestReportView } from '@/components/submissions/TestReportView';
 import { usePolling } from '@/hooks/usePolling';
 import { apiClient } from '@/lib/api/client';
+import type { TestReport } from '@/lib/api/submissions';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -25,6 +27,7 @@ interface AttemptStatusSnapshot {
   status: SubmissionStatus;
   score: number | null;
   pipelineOutput: string | null;
+  testReport?: TestReport | null;
 }
 
 const TERMINAL_STATUSES: SubmissionStatus[] = ['PASSED', 'FAILED', 'ERROR'];
@@ -104,8 +107,8 @@ export default function AttemptStatusPage({ params }: { params: { id: string } }
           )}
         </CardContent>
 
-        {/* Pipeline output section */}
-        {status?.pipelineOutput ? (
+        {/* Test results section */}
+        {status != null && (status.testReport?.detailsAvailable || status.pipelineOutput) ? (
           <>
             <Divider />
             <CardContent sx={{ p: 3 }}>
@@ -120,27 +123,9 @@ export default function AttemptStatusPage({ params }: { params: { id: string } }
                   display: 'block',
                 }}
               >
-                Pipeline output
+                Test results
               </Typography>
-              <Box
-                component="pre"
-                sx={{
-                  bgcolor: 'grey.900',
-                  color: 'grey.100',
-                  p: 2,
-                  borderRadius: 1,
-                  overflowX: 'auto',
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                  maxHeight: 400,
-                  overflowY: 'auto',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  m: 0,
-                }}
-              >
-                {status.pipelineOutput}
-              </Box>
+              <TestReportView report={status.testReport} pipelineOutput={status.pipelineOutput} />
             </CardContent>
           </>
         ) : status != null && TERMINAL_STATUSES.includes(status.status) ? (

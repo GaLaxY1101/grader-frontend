@@ -67,10 +67,10 @@ export const AssignmentFormFields = ({
   const testFileAccept = language === 'PYTHON' ? '.py' : '.cpp,.cxx,.cc,.h,.hpp,.c';
   const solutionImportHint =
     language === 'PYTHON'
-      ? 'Write pytest tests. Use `from solution import ...` to access student code.'
-      : language === 'C'
-        ? 'Write assertions in main(). Use #include "solution.c" to access student code. Return 0 on success.'
-        : 'Write assertions in main(). Use #include "solution.cpp" to access student code. Return 0 on success.';
+      ? 'Write pytest tests with `from solution import *`. Compare as `assert actual == expected` so students see both values.'
+      : `Start with #include "grader_test.h" and #include "${language === 'C' ? 'solution.c' : 'solution.cpp'}". ` +
+        'Write each test as TEST_CASE(test_name) { ... } using EXPECT_EQ(expected, actual), EXPECT_TRUE or ' +
+        'EXPECT_NEAR. No main() needed. Plain assert() still works but only shows the raw log.';
 
   useEffect(() => {
     if (!enableCodeCheck || !language) return;
@@ -238,6 +238,28 @@ export const AssignmentFormFields = ({
                   <TestGenerationPanel form={form} assignmentId={assignmentId} />
                 </>
               )}
+
+              <Controller
+                name="feedbackLevel"
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>Student feedback</InputLabel>
+                    <Select {...field} label="Student feedback" value={field.value ?? 'FULL'}>
+                      <MenuItem value="FULL">Full: test names, expected and actual values</MenuItem>
+                      <MenuItem value="NAMES_ONLY">
+                        Names only: pass/fail per test, no values
+                      </MenuItem>
+                      <MenuItem value="SUMMARY">Summary: only the number of passed tests</MenuItem>
+                    </Select>
+                    <FormHelperText>
+                      What students see after each attempt. Use &quot;Names only&quot; or
+                      &quot;Summary&quot; for hidden tests; this also hides compiler output.
+                      Students never see the raw CI log; teachers always see the full report.
+                    </FormHelperText>
+                  </FormControl>
+                )}
+              />
 
               <CollapsibleCodeSection
                 title={`Test File (${testFileName})`}

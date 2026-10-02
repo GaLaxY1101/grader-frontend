@@ -10,7 +10,8 @@ vi.mock('@monaco-editor/react', () => ({ default: () => null }));
 const { generationBlocker, isUntouchedTestFile } = await import('./TestGenerationPanel');
 
 describe('isUntouchedTestFile', () => {
-  const template = 'from solution import *\n\n\ndef test_example():\n    assert True\n';
+  const template =
+    'from solution import *\n\n\ndef test_example():\n    actual = add(2, 3)\n    assert actual == 5\n';
 
   it('treats empty content and the starter template as untouched, ignoring CRLF', () => {
     expect(isUntouchedTestFile('  ', 'PYTHON')).toBe(true);
