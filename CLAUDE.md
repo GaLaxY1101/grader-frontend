@@ -246,6 +246,7 @@ KEYCLOAK_REALM=university-grader
 KEYCLOAK_CLIENT_ID=grader-frontend
 KEYCLOAK_CLIENT_SECRET=
 NEXT_PUBLIC_API_URL=http://localhost:8080
+API_INTERNAL_URL=                   # optional: backend URL for server-side calls (Docker: http://backend:8080)
 ```
 
 All env vars are validated in src/utils/env.ts using @t3-oss/env-nextjs.

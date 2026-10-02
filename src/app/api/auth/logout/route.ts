@@ -45,5 +45,6 @@ export async function GET(request: NextRequest) {
   cookieStore.delete('__Secure-next-auth.session-token');
 
   // Redirect directly to sign-in — no Keycloak front-channel redirect needed.
-  return NextResponse.redirect(new URL('/signin', request.url));
+  // Base on NEXTAUTH_URL: behind Docker request.url carries the bind address (0.0.0.0).
+  return NextResponse.redirect(new URL('/signin', env.NEXTAUTH_URL));
 }

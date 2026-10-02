@@ -9,6 +9,8 @@ export const env = createEnv({
     KEYCLOAK_REALM: z.string().min(1),
     KEYCLOAK_CLIENT_ID: z.string().min(1),
     KEYCLOAK_CLIENT_SECRET: z.string().min(1),
+    // Backend URL for server-side calls; inside Docker the public URL is not reachable.
+    API_INTERNAL_URL: z.string().url().optional(),
   },
   client: {
     NEXT_PUBLIC_API_URL: z.string().url(),
@@ -20,6 +22,10 @@ export const env = createEnv({
     KEYCLOAK_REALM: process.env.KEYCLOAK_REALM,
     KEYCLOAK_CLIENT_ID: process.env.KEYCLOAK_CLIENT_ID,
     KEYCLOAK_CLIENT_SECRET: process.env.KEYCLOAK_CLIENT_SECRET,
+    API_INTERNAL_URL: process.env.API_INTERNAL_URL,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   },
+  // Server secrets are only known at runtime, not during `next build` in Docker.
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+  emptyStringAsUndefined: true,
 });

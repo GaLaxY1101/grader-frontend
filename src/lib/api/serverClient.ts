@@ -10,7 +10,7 @@ export const createServerClient = async () => {
   const session = await getServerSession(auth);
 
   const client = createClient<paths>({
-    baseUrl: env.NEXT_PUBLIC_API_URL,
+    baseUrl: env.API_INTERNAL_URL ?? env.NEXT_PUBLIC_API_URL,
     headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
   });
 

@@ -518,3 +518,23 @@ const { data, error } = await client.GET('/api/courses');
 ### Next
 - Frontend Dockerfile + reverse proxy in `grader/compose.server.yaml` (server deployment).
 - Optional: reference solution for template assignments (backend + UI).
+
+## 2026-10-02 — Docker image for server deployment
+
+### Done
+- `Dockerfile` (multi-stage, Next.js `output: 'standalone'`, runs as `node`) + `.dockerignore`;
+  built and started by `grader/compose.server.yaml` from the sibling checkout
+- `API_INTERNAL_URL` (optional server env): server-side API calls use it instead of
+  `NEXT_PUBLIC_API_URL`, which is the browser-facing URL and unreachable inside Docker
+- `SKIP_ENV_VALIDATION` lets `next build` run without runtime secrets
+- Logout redirect is built from `NEXTAUTH_URL`; in the standalone server `request.url`
+  carried the bind address `0.0.0.0`
+
+### Decisions
+- `NEXT_PUBLIC_API_URL` is a build arg (inlined into the bundle), so changing the public host
+  needs an image rebuild
+- Image build runs `next build --no-lint`: lint belongs in CI, and a Windows checkout (CRLF)
+  fails Prettier
+
+### Next
+- Monaco editor loads from cdn.jsdelivr.net; self-host it for offline university networks
