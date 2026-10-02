@@ -49,6 +49,9 @@ export interface paths {
     get: operations['listStudents'];
     post: operations['createStudent'];
   };
+  '/api/test-generation': {
+    post: operations['start'];
+  };
   '/api/templates': {
     get: operations['listTemplates'];
     post: operations['createTemplate'];
@@ -147,6 +150,9 @@ export interface paths {
   '/api/v1/students/{id}': {
     get: operations['getStudent'];
     delete: operations['deleteStudent'];
+  };
+  '/api/test-generation/{jobId}': {
+    get: operations['getJob'];
   };
   '/api/template-assignments/{id}/attachments/{attachmentId}/download': {
     get: operations['downloadAttachment'];
@@ -259,6 +265,7 @@ export interface components {
       ciConfigTemplate?: string;
       functionSignature?: string;
       testFileContent?: string;
+      referenceSolution?: string;
     };
     UpdateTemplateAssignmentRequest: {
       title: string;
@@ -424,6 +431,31 @@ export interface components {
       /** Format: int64 */
       groupId?: number;
       groupCode?: string;
+    };
+    GenerationOverrides: {
+      /** Format: int32 */
+      maxIterations?: number;
+      mutationFeedback?: boolean;
+      /** Format: double */
+      temperature?: number;
+      /** Format: int32 */
+      seed?: number;
+      model?: string;
+      pruneFailing?: boolean;
+    };
+    StartTestGenerationRequest: {
+      /** Format: int64 */
+      assignmentId?: number;
+      taskDescription?: string;
+      functionSignature?: string;
+      /** @enum {string} */
+      language: 'C' | 'CPP' | 'PYTHON';
+      referenceSolution: string;
+      config?: components['schemas']['GenerationOverrides'];
+    };
+    StartTestGenerationResponse: {
+      /** Format: int64 */
+      jobId?: number;
     };
     CreateCourseTemplateRequest: {
       name: string;
@@ -675,6 +707,51 @@ export interface components {
       totalElements?: number;
       /** Format: int32 */
       totalPages?: number;
+    };
+    IterationResponse: {
+      /** Format: int32 */
+      iterationNo?: number;
+      /** @enum {string} */
+      promptType?:
+        | 'GENERATE'
+        | 'REPAIR_COMPILE'
+        | 'REPAIR_FAILING'
+        | 'KILL_MUTANT'
+        | 'PRUNE_FAILING';
+      compileOk?: boolean;
+      /** Format: int32 */
+      refPassed?: number;
+      /** Format: int32 */
+      refTotal?: number;
+      /** Format: int32 */
+      mutantsKilled?: number;
+      /** Format: int32 */
+      mutantsTotal?: number;
+      /** Format: double */
+      coveragePct?: number;
+      /** Format: int32 */
+      testCount?: number;
+      accepted?: boolean;
+      /** Format: int64 */
+      durationMs?: number;
+    };
+    TestGenerationJobResponse: {
+      /** Format: int64 */
+      id?: number;
+      /** @enum {string} */
+      status?: 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
+      /** @enum {string} */
+      language?: 'C' | 'CPP' | 'PYTHON';
+      model?: string;
+      /** Format: int64 */
+      assignmentId?: number;
+      finalTestContent?: string;
+      errorMessage?: string;
+      /** Format: date-time */
+      createdAt?: string;
+      /** Format: date-time */
+      finishedAt?: string;
+      iterations?: components['schemas']['IterationResponse'][];
     };
     PageResponseCourseTemplateResponse: {
       content?: components['schemas']['CourseTemplateResponse'][];
@@ -1200,6 +1277,21 @@ export interface operations {
       200: {
         content: {
           '*/*': components['schemas']['StudentResponse'];
+        };
+      };
+    };
+  };
+  start: {
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StartTestGenerationRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['StartTestGenerationResponse'];
         };
       };
     };
@@ -1906,6 +1998,21 @@ export interface operations {
       /** @description OK */
       200: {
         content: never;
+      };
+    };
+  };
+  getJob: {
+    parameters: {
+      path: {
+        jobId: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          '*/*': components['schemas']['TestGenerationJobResponse'];
+        };
       };
     };
   };

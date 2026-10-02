@@ -108,7 +108,7 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
           noValidate
         >
           <Stack spacing={2.5}>
-            <AssignmentFormFields form={form} showDeadline />
+            <AssignmentFormFields form={form} showDeadline enableAiTestGeneration />
 
             {form.formState.errors.root != null && (
               <FormHelperText error>{form.formState.errors.root.message}</FormHelperText>

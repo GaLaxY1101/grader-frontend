@@ -103,7 +103,12 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
 
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
           <DialogContent>
-            <AssignmentFormFields form={form} showDeadline />
+            <AssignmentFormFields
+              form={form}
+              showDeadline
+              enableAiTestGeneration
+              assignmentId={assignment.id}
+            />
           </DialogContent>
 
           <DialogActions sx={{ px: 3, pb: 2 }}>

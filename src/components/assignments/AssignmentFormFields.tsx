@@ -2,8 +2,6 @@
 
 import { AssignmentType, supportsCode } from '@/utils/assignmentType';
 import Editor from '@monaco-editor/react';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Collapse from '@mui/material/Collapse';
@@ -13,22 +11,35 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
-import Paper from '@mui/material/Paper';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Controller, type UseFormReturn } from 'react-hook-form';
 import { getTestFileTemplate, type AssignmentFormValues } from './assignmentFormSchema';
+import { codeEditorOptions, CollapsibleCodeSection, EditorFrame } from './CollapsibleCodeSection';
+import { TestGenerationPanel } from './TestGenerationPanel';
 
 interface AssignmentFormFieldsProps {
   form: UseFormReturn<AssignmentFormValues>;
   showDeadline: boolean;
+  /**
+   * Shows the reference solution editor and the "Generate tests with AI" panel.
+   * Course assignments only: templates do not store a reference solution.
+   */
+  enableAiTestGeneration?: boolean;
+  /** Saved assignment id, passed to AI test generation; undefined for a new assignment. */
+  assignmentId?: number;
 }
 
-export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormFieldsProps) => {
+export const AssignmentFormFields = ({
+  form,
+  showDeadline,
+  enableAiTestGeneration = false,
+  assignmentId,
+}: AssignmentFormFieldsProps) => {
   const {
     register,
     control,
@@ -68,8 +79,6 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
     const template = getTestFileTemplate(language);
     if (template) setValue('testFileContent', template, { shouldDirty: false });
   }, [enableCodeCheck, language, getValues, setValue]);
-  const [signatureOpen, setSignatureOpen] = useState<boolean>(true);
-  const [testFileOpen, setTestFileOpen] = useState<boolean>(true);
 
   const handleTestFileUpload = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,194 +188,97 @@ export const AssignmentFormFields = ({ form, showDeadline }: AssignmentFormField
                 )}
               />
 
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 2,
-                  mt: 1,
-                  borderColor: errors.functionSignature ? 'error.main' : 'divider',
-                  bgcolor: 'background.default',
-                }}
+              <CollapsibleCodeSection
+                title="Function Signature / Template Code"
+                caption="This code will be pre-filled in the student's editor."
+                errorMessage={errors.functionSignature?.message}
               >
-                <Box
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSignatureOpen((v) => !v)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setSignatureOpen((v) => !v);
-                    }
-                  }}
-                  aria-expanded={signatureOpen}
-                  aria-label={signatureOpen ? 'Collapse editor' : 'Expand editor'}
-                  sx={{
-                    display: 'block',
-                    width: '100%',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    borderRadius: 1,
-                    mx: -1,
-                    px: 1,
-                    py: 0.5,
-                    mb: 1,
-                    '&:hover': { bgcolor: 'action.hover' },
-                    '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    {signatureOpen ? (
-                      <ExpandLessIcon fontSize="small" />
-                    ) : (
-                      <ExpandMoreIcon fontSize="small" />
-                    )}
-                    <Typography variant="subtitle2">Function Signature / Template Code</Typography>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                    This code will be pre-filled in the student&apos;s editor.
-                  </Typography>
-                </Box>
-                <Collapse in={signatureOpen} unmountOnExit={false}>
-                  <Controller
-                    name="functionSignature"
-                    control={control}
-                    render={({ field }) => (
-                      <Box
-                        sx={{
-                          border: '1px solid',
-                          borderColor: errors.functionSignature ? 'error.main' : 'divider',
-                          borderRadius: 1,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <Editor
-                          height="350px"
-                          language={monacoLanguage}
-                          theme="vs"
-                          value={field.value ?? ''}
-                          onChange={(value) => field.onChange(value ?? '')}
-                          options={{
-                            minimap: { enabled: false },
-                            fontSize: 13,
-                            tabSize: 4,
-                            lineNumbers: 'on',
-                            lineNumbersMinChars: 3,
-                            wordWrap: 'on',
-                            scrollBeyondLastLine: false,
-                            padding: { top: 12, bottom: 12 },
-                            scrollbar: { alwaysConsumeMouseWheel: false },
-                          }}
-                        />
-                      </Box>
-                    )}
-                  />
-                </Collapse>
-                {errors.functionSignature && (
-                  <FormHelperText error>{errors.functionSignature.message}</FormHelperText>
-                )}
-              </Paper>
-
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 2,
-                  borderColor: errors.testFileContent ? 'error.main' : 'divider',
-                  bgcolor: 'background.default',
-                }}
-              >
-                <Box
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setTestFileOpen((v) => !v)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setTestFileOpen((v) => !v);
-                    }
-                  }}
-                  aria-expanded={testFileOpen}
-                  aria-label={testFileOpen ? 'Collapse editor' : 'Expand editor'}
-                  sx={{
-                    display: 'block',
-                    width: '100%',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    borderRadius: 1,
-                    mx: -1,
-                    px: 1,
-                    py: 0.5,
-                    mb: 1,
-                    '&:hover': { bgcolor: 'action.hover' },
-                    '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    {testFileOpen ? (
-                      <ExpandLessIcon fontSize="small" />
-                    ) : (
-                      <ExpandMoreIcon fontSize="small" />
-                    )}
-                    <Typography variant="subtitle2">Test File ({testFileName})</Typography>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                    {solutionImportHint}
-                  </Typography>
-                </Box>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={testFileAccept}
-                  hidden
-                  onChange={handleTestFileUpload}
+                <Controller
+                  name="functionSignature"
+                  control={control}
+                  render={({ field }) => (
+                    <EditorFrame hasError={errors.functionSignature != null}>
+                      <Editor
+                        height="350px"
+                        language={monacoLanguage}
+                        theme="vs"
+                        value={field.value ?? ''}
+                        onChange={(value) => field.onChange(value ?? '')}
+                        options={codeEditorOptions}
+                      />
+                    </EditorFrame>
+                  )}
                 />
-                <Collapse in={testFileOpen} unmountOnExit={false}>
-                  <Controller
-                    name="testFileContent"
-                    control={control}
-                    render={({ field }) => (
-                      <Box
-                        sx={{
-                          border: '1px solid',
-                          borderColor: errors.testFileContent ? 'error.main' : 'divider',
-                          borderRadius: 1,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <Editor
-                          height="500px"
-                          language={monacoLanguage}
-                          theme="vs"
-                          value={field.value ?? ''}
-                          onChange={(value) => field.onChange(value ?? '')}
-                          options={{
-                            minimap: { enabled: false },
-                            fontSize: 13,
-                            tabSize: 4,
-                            lineNumbers: 'on',
-                            lineNumbersMinChars: 3,
-                            wordWrap: 'on',
-                            scrollBeyondLastLine: false,
-                            padding: { top: 12, bottom: 12 },
-                            scrollbar: { alwaysConsumeMouseWheel: false },
-                          }}
-                        />
-                      </Box>
-                    )}
+              </CollapsibleCodeSection>
+
+              {enableAiTestGeneration && (
+                <>
+                  <CollapsibleCodeSection
+                    title="Reference Solution"
+                    caption="Correct solution used to validate generated tests. Hidden from students."
+                  >
+                    <Controller
+                      name="referenceSolution"
+                      control={control}
+                      render={({ field }) => (
+                        <EditorFrame>
+                          <Editor
+                            height="300px"
+                            language={monacoLanguage}
+                            theme="vs"
+                            value={field.value ?? ''}
+                            onChange={(value) => field.onChange(value ?? '')}
+                            options={codeEditorOptions}
+                          />
+                        </EditorFrame>
+                      )}
+                    />
+                  </CollapsibleCodeSection>
+
+                  <TestGenerationPanel form={form} assignmentId={assignmentId} />
+                </>
+              )}
+
+              <CollapsibleCodeSection
+                title={`Test File (${testFileName})`}
+                caption={solutionImportHint}
+                errorMessage={errors.testFileContent?.message}
+                header={
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={testFileAccept}
+                    hidden
+                    onChange={handleTestFileUpload}
                   />
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      Upload File
-                    </Button>
-                  </Box>
-                </Collapse>
-                {errors.testFileContent && (
-                  <FormHelperText error>{errors.testFileContent.message}</FormHelperText>
-                )}
-              </Paper>
+                }
+              >
+                <Controller
+                  name="testFileContent"
+                  control={control}
+                  render={({ field }) => (
+                    <EditorFrame hasError={errors.testFileContent != null}>
+                      <Editor
+                        height="500px"
+                        language={monacoLanguage}
+                        theme="vs"
+                        value={field.value ?? ''}
+                        onChange={(value) => field.onChange(value ?? '')}
+                        options={codeEditorOptions}
+                      />
+                    </EditorFrame>
+                  )}
+                />
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Upload File
+                  </Button>
+                </Box>
+              </CollapsibleCodeSection>
             </Stack>
           </Collapse>
         </>

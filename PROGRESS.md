@@ -479,3 +479,42 @@ const { data, error } = await client.GET('/api/courses');
 ### Next
 - Manual browser smoke: create template → add assignment (with programming task + test cases) → share with another teacher → sign in as that teacher → try to edit → confirm copy prompt → copy → verify new copy owned by caller. Then create course from template → verify assignments were snapshotted.
 - Consider adding server-side integration tests for template access rules (WebMvcTest with mocked JWT) as a follow-up.
+
+---
+
+## 2026-10-02 — AI test generation UI (Phase 2 of docs/ai-testgen)
+
+### Done
+- **Types** — `pnpm generate-api` for `POST /api/test-generation`, `GET /api/test-generation/{jobId}`,
+  `ProgrammingTaskDetails.referenceSolution`; file kept Prettier-formatted so the diff is additions only.
+- **Reference solution** — `referenceSolution` in `assignmentFormSchema` (optional, sent in
+  `programmingTask`, loaded by `toFormDefaults`), Monaco editor section "Reference Solution" with
+  "Hidden from students." helper text.
+- **API module** `src/lib/api/testGeneration.ts` — `startTestGeneration`, `getTestGenerationJob`
+  (surface backend `detail`, e.g. the 409 "already running" message).
+- **Hook** `useTestGeneration` — start + poll every 2 s via a setTimeout chain (no overlapping
+  requests), stops on SUCCEEDED/FAILED and on unmount; exposes `{ start, status, job, error, isRunning }`.
+- **Components** — `TestGenerationPanel` (button with tooltip explaining what is missing, mutation
+  feedback switch, progress, iteration timeline, read-only preview, "Use these tests" with replace
+  confirmation, Retry on failure, toasts), `TestGenerationTimeline` (per-iteration chips: compile,
+  reference passed/total, bugs caught, test count, coverage, duration; rejected iterations greyed),
+  `CollapsibleCodeSection` (shared collapsible Monaco section, replaces two duplicated blocks).
+- **Wiring** — enabled on the course "New Assignment" page and `EditAssignmentDialog` (`enableAiTestGeneration`).
+- **Tests** — Vitest set up (`vitest@3`, jsdom, @testing-library/react, `vitest.config.mts` with `@` alias).
+  16 tests: hook polling/stop/unmount/error, schema mapping, generate-button rules, untouched-template check.
+- **Checks** — `pnpm lint:eslint`, `pnpm tsc:test`, `pnpm test:vitest`, `pnpm build` green.
+- **Browser E2E** (local, seed users) — teacher created a Python assignment with reference solution,
+  generated tests (Generate → 3× Fix failing → Remove failing: 8/8 pass, 3/3 bugs caught), inserted
+  them and saved; edit dialog reloads the reference solution. As student: `GET /api/assignments/36`
+  and `GET /api/courses/12` contain no reference solution; `GET /api/test-generation/10` → 403.
+
+### Decisions
+- **Templates excluded** — template assignments have no `referenceSolution` on the backend, so the
+  field and panel are hidden there (`enableAiTestGeneration` defaults to false) instead of silently dropping input.
+- **Vitest 3 instead of 5** — Vitest 5's rolldown native binding failed to load on Windows/Node 25.
+- **Custom polling in the hook** instead of `usePolling`: polling must start only after `start()` and
+  restart for each new job.
+
+### Next
+- Frontend Dockerfile + reverse proxy in `grader/compose.server.yaml` (server deployment).
+- Optional: reference solution for template assignments (backend + UI).

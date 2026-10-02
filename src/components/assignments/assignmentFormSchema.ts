@@ -13,6 +13,8 @@ export const assignmentFormSchema = z
     ciConfigTemplate: z.string().optional(),
     functionSignature: z.string().optional(),
     testFileContent: z.string().optional(),
+    /** Teacher's correct solution; validates AI-generated tests. Never shown to students. */
+    referenceSolution: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (!supportsCode(data.type)) {
@@ -90,6 +92,7 @@ export type ProgrammingTaskPayload = {
   ciConfigTemplate?: string;
   functionSignature?: string;
   testFileContent?: string;
+  referenceSolution?: string;
 };
 
 /**
@@ -117,6 +120,7 @@ export function buildProgrammingTaskPayload(
     ciConfigTemplate: data.ciConfigTemplate || undefined,
     functionSignature: data.functionSignature || undefined,
     testFileContent: data.testFileContent || undefined,
+    referenceSolution: data.referenceSolution || undefined,
   };
 }
 
@@ -125,6 +129,7 @@ interface ExistingProgrammingTask {
   ciConfigTemplate?: string | null;
   functionSignature?: string | null;
   testFileContent?: string | null;
+  referenceSolution?: string | null;
 }
 
 interface ExistingAssignmentValues {
@@ -153,6 +158,7 @@ export function toFormDefaults(existing: ExistingAssignmentValues): AssignmentFo
     ciConfigTemplate: task?.ciConfigTemplate ?? '',
     functionSignature: task?.functionSignature ?? '',
     testFileContent: task?.testFileContent ?? '',
+    referenceSolution: task?.referenceSolution ?? '',
   };
 }
 
@@ -166,4 +172,5 @@ export const emptyFormDefaults: AssignmentFormValues = {
   ciConfigTemplate: '',
   functionSignature: '',
   testFileContent: '',
+  referenceSolution: '',
 };
