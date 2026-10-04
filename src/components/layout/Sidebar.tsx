@@ -21,7 +21,7 @@ import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
 import React from 'react';
 
-const SIDEBAR_WIDTH = 256;
+export const SIDEBAR_WIDTH = 256;
 
 const iconMap: Record<string, React.ElementType> = {
   School: SchoolIcon,

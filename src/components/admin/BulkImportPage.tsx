@@ -1,6 +1,7 @@
 'use client';
 
 import { PageHeader } from '@/components/common/PageHeader';
+import { useSidebarState } from '@/components/layout/MainLayout';
 import {
   commitBulkImportIntoGroup,
   commitBulkImportWithNewGroup,
@@ -147,6 +148,7 @@ const isBulkImportProblem = (value: unknown): value is BulkImportProblem => {
 
 export const BulkImportPage = ({ groups, existingEmails }: BulkImportPageProps) => {
   const router = useRouter();
+  const { open: sidebarOpen, width: sidebarWidth } = useSidebarState();
 
   const [rows, setRows] = useState<EditableRow[]>([emptyRow()]);
   const [groupMode, setGroupMode] = useState<GroupMode>('new');
@@ -601,13 +603,14 @@ export const BulkImportPage = ({ groups, existingEmails }: BulkImportPageProps) 
         elevation={4}
         sx={{
           position: 'fixed',
-          left: 0,
+          left: sidebarOpen ? sidebarWidth : 0,
           right: 0,
           bottom: 0,
           borderRadius: 0,
           borderTop: '1px solid',
           borderColor: 'divider',
           zIndex: 10,
+          transition: 'left 0.25s ease',
         }}
       >
         <Container maxWidth="lg">
