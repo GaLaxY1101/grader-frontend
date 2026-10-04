@@ -2,7 +2,6 @@ import { SubmissionAttachmentsPanel } from '@/components/submissions/SubmissionA
 import { SubmissionStatusBadge } from '@/components/submissions/SubmissionStatusBadge';
 import { TestReportView } from '@/components/submissions/TestReportView';
 import { getSubmissionById, listAttempts } from '@/lib/api/submissions';
-import { supportsFiles } from '@/utils/assignmentType';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
@@ -124,14 +123,12 @@ export default async function SubmissionDetailPage({ params }: { params: { id: s
           )}
         </CardContent>
 
-        {supportsFiles(submission.assignmentType) && (
-          <>
-            <Divider />
-            <CardContent sx={{ p: 3 }}>
-              <SubmissionAttachmentsPanel submissionId={submissionId} />
-            </CardContent>
-          </>
-        )}
+        <>
+          <Divider />
+          <CardContent sx={{ p: 3 }}>
+            <SubmissionAttachmentsPanel submissionId={submissionId} />
+          </CardContent>
+        </>
       </Card>
 
       {/* Attempts card */}

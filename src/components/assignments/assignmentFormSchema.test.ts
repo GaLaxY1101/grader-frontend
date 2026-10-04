@@ -1,4 +1,3 @@
-import { AssignmentType } from '@/utils/assignmentType';
 import { describe, expect, it } from 'vitest';
 import {
   assignmentFormSchema,
@@ -11,7 +10,7 @@ import {
 const codeCheckValues = (overrides: Partial<AssignmentFormValues> = {}): AssignmentFormValues => ({
   ...emptyFormDefaults,
   title: 'Fibonacci',
-  enableCodeCheck: true,
+  codeCheckEnabled: true,
   language: 'PYTHON',
   functionSignature: 'def fib(n):\n    pass\n',
   testFileContent: 'from solution import *\n',
@@ -42,7 +41,7 @@ describe('assignmentFormSchema – reference solution', () => {
 
   it('is not sent when code check is disabled', () => {
     const payload = buildProgrammingTaskPayload(
-      codeCheckValues({ enableCodeCheck: false, referenceSolution: 'x' }),
+      codeCheckValues({ codeCheckEnabled: false, referenceSolution: 'x' }),
     );
 
     expect(payload).toBeUndefined();
@@ -51,7 +50,7 @@ describe('assignmentFormSchema – reference solution', () => {
   it('is loaded into edit form defaults, and null becomes an empty string', () => {
     const withSolution = toFormDefaults({
       title: 'Fib',
-      type: AssignmentType.CODE,
+      codeCheckEnabled: true,
       programmingTask: { language: 'PYTHON', referenceSolution: 'def fib(n): ...' },
     });
     const hiddenForStudent = toFormDefaults({

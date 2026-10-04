@@ -55,7 +55,6 @@ export default function NewAssignmentPage({ params }: { params: { id: string } }
           maxScore: data.maxScore,
           deadline: data.deadline || undefined,
           programmingTask: buildProgrammingTaskPayload(data),
-          type: data.type,
         },
       });
 

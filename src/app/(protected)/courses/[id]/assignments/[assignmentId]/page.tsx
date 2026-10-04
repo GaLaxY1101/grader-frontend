@@ -9,7 +9,6 @@ import { listAssignmentAttachmentsServer } from '@/lib/api/assignmentAttachments
 import { getAssignmentById } from '@/lib/api/assignments';
 import { getMySubmission, listAttempts, listSubmissionsByAssignment } from '@/lib/api/submissions';
 import { auth } from '@/lib/server/auth';
-import { supportsCode, supportsFiles } from '@/utils/assignmentType';
 import { Role } from '@/utils/roles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
@@ -85,9 +84,8 @@ export default async function AssignmentDetailPage({
   const deadline = formatDeadline(assignment?.deadline);
   const programmingTask = assignment?.programmingTask;
   const hasCodeCheck = programmingTask != null;
-  const assignmentType = assignment?.type;
-  const acceptsCode = supportsCode(assignmentType);
-  const acceptsFiles = supportsFiles(assignmentType);
+  const acceptsCode = assignment?.codeCheckEnabled ?? false;
+  const acceptsFiles = true;
 
   return (
     <Box sx={{ p: 4 }}>
@@ -271,9 +269,6 @@ export default async function AssignmentDetailPage({
                     initialSubmission={mySubmission ?? null}
                   />
                 </Box>
-              )}
-              {!acceptsCode && !acceptsFiles && (
-                <Alert severity="info">This assignment does not accept submissions.</Alert>
               )}
             </CardContent>
           </>

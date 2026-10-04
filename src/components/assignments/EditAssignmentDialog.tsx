@@ -55,9 +55,9 @@ export const EditAssignmentDialog = ({ assignment, open, onClose }: EditAssignme
   const onSubmit = async (data: AssignmentFormValues) => {
     if (assignment.id == null) return;
 
-    if (hadCodeCheck && !data.enableCodeCheck) {
+    if (hadCodeCheck && !data.codeCheckEnabled) {
       const confirmed = window.confirm(
-        'This will delete the existing code check configuration (function signature, test cases, etc.). Continue?',
+        'Disabling code check will delete the existing code check configuration. Continue?',
       );
       if (!confirmed) return;
     }

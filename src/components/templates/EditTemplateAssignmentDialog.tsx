@@ -59,9 +59,9 @@ export const EditTemplateAssignmentDialog = ({
   const onSubmit = async (data: AssignmentFormValues) => {
     if (assignment.id == null) return;
 
-    if (hadCodeCheck && !data.enableCodeCheck) {
+    if (hadCodeCheck && !data.codeCheckEnabled) {
       const confirmed = window.confirm(
-        'This will delete the existing code check configuration. Continue?',
+        'Disabling code check will delete the existing code check configuration. Continue?',
       );
       if (!confirmed) return;
     }
@@ -81,7 +81,6 @@ export const EditTemplateAssignmentDialog = ({
           description: data.description || undefined,
           maxScore: data.maxScore,
           programmingTask: buildProgrammingTaskPayload(data),
-          type: data.type,
         },
       });
 

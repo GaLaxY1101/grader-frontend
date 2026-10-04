@@ -1,10 +1,8 @@
 'use client';
 
-import { AssignmentType, supportsCode } from '@/utils/assignmentType';
 import Editor from '@monaco-editor/react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Collapse from '@mui/material/Collapse';
 import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -15,7 +13,6 @@ import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
 import { useCallback, useEffect, useRef } from 'react';
 import { Controller, type UseFormReturn } from 'react-hook-form';
 import { getTestFileTemplate, type AssignmentFormValues } from './assignmentFormSchema';
@@ -49,17 +46,9 @@ export const AssignmentFormFields = ({
     formState: { errors },
   } = form;
 
-  const enableCodeCheck = watch('enableCodeCheck');
   const language = watch('language');
-  const type = watch('type');
-  const codeAllowed = supportsCode(type);
+  const codeAllowed = watch('codeCheckEnabled');
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!codeAllowed && enableCodeCheck) {
-      setValue('enableCodeCheck', false, { shouldDirty: true });
-    }
-  }, [codeAllowed, enableCodeCheck, setValue]);
 
   const monacoLanguage = language === 'PYTHON' ? 'python' : language === 'C' ? 'c' : 'cpp';
   const testFileName =
@@ -73,12 +62,12 @@ export const AssignmentFormFields = ({
         'EXPECT_NEAR. No main() needed. Plain assert() still works but only shows the raw log.';
 
   useEffect(() => {
-    if (!enableCodeCheck || !language) return;
+    if (!codeAllowed || !language) return;
     const current = getValues('testFileContent') ?? '';
     if (current.trim() !== '') return;
     const template = getTestFileTemplate(language);
     if (template) setValue('testFileContent', template, { shouldDirty: false });
-  }, [enableCodeCheck, language, getValues, setValue]);
+  }, [codeAllowed, language, getValues, setValue]);
 
   const handleTestFileUpload = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,162 +115,72 @@ export const AssignmentFormFields = ({
       )}
 
       <Controller
-        name="type"
+        name="codeCheckEnabled"
         control={control}
         render={({ field }) => (
-          <FormControl fullWidth>
-            <InputLabel>Assignment type</InputLabel>
-            <Select {...field} label="Assignment type">
-              <MenuItem value={AssignmentType.CODE}>Code only</MenuItem>
-              <MenuItem value={AssignmentType.FILE}>Files only</MenuItem>
-              <MenuItem value={AssignmentType.CODE_FILE}>Code + files</MenuItem>
-            </Select>
-            <FormHelperText>
-              File and hybrid assignments let students attach files reviewed manually.
-            </FormHelperText>
-          </FormControl>
+          <FormControlLabel
+            control={<Switch checked={field.value} onChange={field.onChange} />}
+            label="Enable code check"
+          />
         )}
       />
 
       <Divider />
 
       {codeAllowed && (
-        <>
+        <Stack spacing={2.5}>
           <Controller
-            name="enableCodeCheck"
+            name="language"
             control={control}
             render={({ field }) => (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={field.value}
-                    onChange={(e) => field.onChange(e.target.checked)}
-                  />
-                }
-                label={
-                  <Box>
-                    <Typography variant="subtitle2">Enable Code Check</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Students submit code that is compiled against a teacher-provided test file.
-                    </Typography>
-                  </Box>
-                }
-              />
+              <FormControl fullWidth required error={errors.language != null}>
+                <InputLabel>Language</InputLabel>
+                <Select {...field} label="Language" value={field.value ?? ''}>
+                  <MenuItem value="C">C</MenuItem>
+                  <MenuItem value="CPP">C++</MenuItem>
+                  <MenuItem value="PYTHON">Python</MenuItem>
+                </Select>
+                {errors.language && <FormHelperText>{errors.language.message}</FormHelperText>}
+              </FormControl>
             )}
           />
 
-          <Collapse in={enableCodeCheck} unmountOnExit timeout={600}>
-            <Stack spacing={2.5}>
-              <Controller
-                name="language"
-                control={control}
-                render={({ field }) => (
-                  <FormControl fullWidth required error={errors.language != null}>
-                    <InputLabel>Language</InputLabel>
-                    <Select {...field} label="Language" value={field.value ?? ''}>
-                      <MenuItem value="C">C</MenuItem>
-                      <MenuItem value="CPP">C++</MenuItem>
-                      <MenuItem value="PYTHON">Python</MenuItem>
-                    </Select>
-                    {errors.language && <FormHelperText>{errors.language.message}</FormHelperText>}
-                  </FormControl>
-                )}
-              />
-
-              <CollapsibleCodeSection
-                title="Function Signature / Template Code"
-                caption="This code will be pre-filled in the student's editor."
-                errorMessage={errors.functionSignature?.message}
-              >
-                <Controller
-                  name="functionSignature"
-                  control={control}
-                  render={({ field }) => (
-                    <EditorFrame hasError={errors.functionSignature != null}>
-                      <Editor
-                        height="350px"
-                        language={monacoLanguage}
-                        theme="vs"
-                        value={field.value ?? ''}
-                        onChange={(value) => field.onChange(value ?? '')}
-                        options={codeEditorOptions}
-                      />
-                    </EditorFrame>
-                  )}
-                />
-              </CollapsibleCodeSection>
-
-              {enableAiTestGeneration && (
-                <>
-                  <CollapsibleCodeSection
-                    title="Reference Solution"
-                    caption="Correct solution used to validate generated tests. Hidden from students."
-                  >
-                    <Controller
-                      name="referenceSolution"
-                      control={control}
-                      render={({ field }) => (
-                        <EditorFrame>
-                          <Editor
-                            height="300px"
-                            language={monacoLanguage}
-                            theme="vs"
-                            value={field.value ?? ''}
-                            onChange={(value) => field.onChange(value ?? '')}
-                            options={codeEditorOptions}
-                          />
-                        </EditorFrame>
-                      )}
-                    />
-                  </CollapsibleCodeSection>
-
-                  <TestGenerationPanel form={form} assignmentId={assignmentId} />
-                </>
-              )}
-
-              <Controller
-                name="feedbackLevel"
-                control={control}
-                render={({ field }) => (
-                  <FormControl fullWidth>
-                    <InputLabel>Student feedback</InputLabel>
-                    <Select {...field} label="Student feedback" value={field.value ?? 'FULL'}>
-                      <MenuItem value="FULL">Full: test names, expected and actual values</MenuItem>
-                      <MenuItem value="NAMES_ONLY">
-                        Names only: pass/fail per test, no values
-                      </MenuItem>
-                      <MenuItem value="SUMMARY">Summary: only the number of passed tests</MenuItem>
-                    </Select>
-                    <FormHelperText>
-                      What students see after each attempt. Use &quot;Names only&quot; or
-                      &quot;Summary&quot; for hidden tests; this also hides compiler output.
-                      Students never see the raw CI log; teachers always see the full report.
-                    </FormHelperText>
-                  </FormControl>
-                )}
-              />
-
-              <CollapsibleCodeSection
-                title={`Test File (${testFileName})`}
-                caption={solutionImportHint}
-                errorMessage={errors.testFileContent?.message}
-                header={
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept={testFileAccept}
-                    hidden
-                    onChange={handleTestFileUpload}
+          <CollapsibleCodeSection
+            title="Function Signature / Template Code"
+            caption="This code will be pre-filled in the student's editor."
+            errorMessage={errors.functionSignature?.message}
+          >
+            <Controller
+              name="functionSignature"
+              control={control}
+              render={({ field }) => (
+                <EditorFrame hasError={errors.functionSignature != null}>
+                  <Editor
+                    height="350px"
+                    language={monacoLanguage}
+                    theme="vs"
+                    value={field.value ?? ''}
+                    onChange={(value) => field.onChange(value ?? '')}
+                    options={codeEditorOptions}
                   />
-                }
+                </EditorFrame>
+              )}
+            />
+          </CollapsibleCodeSection>
+
+          {enableAiTestGeneration && (
+            <>
+              <CollapsibleCodeSection
+                title="Reference Solution"
+                caption="Correct solution used to validate generated tests. Hidden from students."
               >
                 <Controller
-                  name="testFileContent"
+                  name="referenceSolution"
                   control={control}
                   render={({ field }) => (
-                    <EditorFrame hasError={errors.testFileContent != null}>
+                    <EditorFrame>
                       <Editor
-                        height="500px"
+                        height="300px"
                         language={monacoLanguage}
                         theme="vs"
                         value={field.value ?? ''}
@@ -291,19 +190,69 @@ export const AssignmentFormFields = ({
                     </EditorFrame>
                   )}
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Upload File
-                  </Button>
-                </Box>
               </CollapsibleCodeSection>
-            </Stack>
-          </Collapse>
-        </>
+
+              <TestGenerationPanel form={form} assignmentId={assignmentId} />
+            </>
+          )}
+
+          <Controller
+            name="feedbackLevel"
+            control={control}
+            render={({ field }) => (
+              <FormControl fullWidth>
+                <InputLabel>Student feedback</InputLabel>
+                <Select {...field} label="Student feedback" value={field.value ?? 'FULL'}>
+                  <MenuItem value="FULL">Full: test names, expected and actual values</MenuItem>
+                  <MenuItem value="NAMES_ONLY">Names only: pass/fail per test, no values</MenuItem>
+                  <MenuItem value="SUMMARY">Summary: only the number of passed tests</MenuItem>
+                </Select>
+                <FormHelperText>
+                  What students see after each attempt. Use &quot;Names only&quot; or
+                  &quot;Summary&quot; for hidden tests; this also hides compiler output. Students
+                  never see the raw CI log; teachers always see the full report.
+                </FormHelperText>
+              </FormControl>
+            )}
+          />
+
+          <CollapsibleCodeSection
+            title={`Test File (${testFileName})`}
+            caption={solutionImportHint}
+            errorMessage={errors.testFileContent?.message}
+            header={
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={testFileAccept}
+                hidden
+                onChange={handleTestFileUpload}
+              />
+            }
+          >
+            <Controller
+              name="testFileContent"
+              control={control}
+              render={({ field }) => (
+                <EditorFrame hasError={errors.testFileContent != null}>
+                  <Editor
+                    height="500px"
+                    language={monacoLanguage}
+                    theme="vs"
+                    value={field.value ?? ''}
+                    onChange={(value) => field.onChange(value ?? '')}
+                    options={codeEditorOptions}
+                  />
+                </EditorFrame>
+              )}
+            />
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+              <Button size="small" variant="outlined" onClick={() => fileInputRef.current?.click()}>
+                Upload File
+              </Button>
+            </Box>
+          </CollapsibleCodeSection>
+        </Stack>
       )}
     </Stack>
   );

@@ -66,7 +66,6 @@ export const CreateTemplateAssignmentDialog = ({
           description: data.description || undefined,
           maxScore: data.maxScore,
           programmingTask: buildProgrammingTaskPayload(data),
-          type: data.type,
         },
       });
       if (error) {

@@ -8,7 +8,7 @@ export type TestCaseResult = components['schemas']['TestCaseResponse'];
 export interface SubmissionResponse {
   id: number;
   assignmentId: number;
-  assignmentType: 'CODE' | 'FILE' | 'CODE_FILE';
+  codeCheckEnabled: boolean;
   studentId: number;
   studentEmail: string;
   status: 'PENDING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR';

@@ -2,7 +2,6 @@
 
 import { apiClient } from '@/lib/api/client';
 import type { components } from '@/lib/api/types/index';
-import { supportsFiles } from '@/utils/assignmentType';
 import CodeIcon from '@mui/icons-material/Code';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -94,8 +93,7 @@ export const TemplateAssignmentsList = ({
         ) : (
           <Stack divider={<Divider />}>
             {assignments.map((a) => {
-              const filesEnabled = supportsFiles(a.type);
-              const showAttachments = filesEnabled && a.id != null;
+              const showAttachments = a.id != null;
               const isOpen = a.id != null && !!expanded[a.id];
               return (
                 <Box key={a.id}>
@@ -114,15 +112,6 @@ export const TemplateAssignmentsList = ({
                         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                           {a.title ?? '—'}
                         </Typography>
-                        {a.type != null && a.type !== 'CODE' && (
-                          <Chip
-                            label={a.type}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                            sx={{ fontSize: '0.7rem', borderRadius: '5px' }}
-                          />
-                        )}
                         {a.programmingTask != null && (
                           <Tooltip title="Code check enabled">
                             <Chip

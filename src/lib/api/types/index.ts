@@ -275,8 +275,6 @@ export interface components {
       /** Format: int32 */
       maxScore?: number;
       programmingTask?: components['schemas']['ProgrammingTaskDetails'];
-      /** @enum {string} */
-      type?: 'CODE' | 'FILE' | 'CODE_FILE';
     };
     TemplateAssignmentResponse: {
       /** Format: int64 */
@@ -287,8 +285,7 @@ export interface components {
       description?: string;
       /** Format: int32 */
       maxScore?: number;
-      /** @enum {string} */
-      type?: 'CODE' | 'FILE' | 'CODE_FILE';
+      codeCheckEnabled?: boolean;
       /** Format: date-time */
       createdAt?: string;
       /** Format: date-time */
@@ -358,8 +355,7 @@ export interface components {
       /** Format: date-time */
       deadline?: string;
       isActive?: boolean;
-      /** @enum {string} */
-      type?: 'CODE' | 'FILE' | 'CODE_FILE';
+      codeCheckEnabled?: boolean;
       /** Format: int64 */
       createdBy?: number;
       /** Format: date-time */
@@ -487,8 +483,6 @@ export interface components {
       /** Format: int32 */
       maxScore?: number;
       programmingTask?: components['schemas']['ProgrammingTaskDetails'];
-      /** @enum {string} */
-      type?: 'CODE' | 'FILE' | 'CODE_FILE';
     };
     AttachmentSummary: {
       /** Format: int64 */
@@ -515,8 +509,7 @@ export interface components {
       id?: number;
       /** Format: int64 */
       assignmentId?: number;
-      /** @enum {string} */
-      assignmentType?: 'CODE' | 'FILE' | 'CODE_FILE';
+      codeCheckEnabled?: boolean;
       /** Format: int64 */
       studentId?: number;
       studentEmail?: string;
@@ -652,8 +645,6 @@ export interface components {
       /** Format: date-time */
       deadline?: string;
       programmingTask?: components['schemas']['ProgrammingTaskDetails'];
-      /** @enum {string} */
-      type?: 'CODE' | 'FILE' | 'CODE_FILE';
     };
     CompileRequest: {
       solutionCode: string;

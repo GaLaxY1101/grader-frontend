@@ -1,4 +1,3 @@
-import { AssignmentType, supportsCode } from '@/utils/assignmentType';
 import { z } from 'zod';
 
 export const assignmentFormSchema = z
@@ -7,8 +6,7 @@ export const assignmentFormSchema = z
     description: z.string().optional(),
     maxScore: z.number().min(1, 'Min 1').max(1000, 'Max 1000'),
     deadline: z.string().optional(),
-    type: z.enum([AssignmentType.CODE, AssignmentType.FILE, AssignmentType.CODE_FILE]),
-    enableCodeCheck: z.boolean(),
+    codeCheckEnabled: z.boolean(),
     language: z.enum(['C', 'CPP', 'PYTHON']).optional(),
     ciConfigTemplate: z.string().optional(),
     functionSignature: z.string().optional(),
@@ -19,17 +17,7 @@ export const assignmentFormSchema = z
     feedbackLevel: z.enum(['FULL', 'NAMES_ONLY', 'SUMMARY']),
   })
   .superRefine((data, ctx) => {
-    if (!supportsCode(data.type)) {
-      if (data.enableCodeCheck) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Code check is not allowed for FILE-only assignments',
-          path: ['enableCodeCheck'],
-        });
-      }
-      return;
-    }
-    if (!data.enableCodeCheck) return;
+    if (!data.codeCheckEnabled) return;
     if (!data.language) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -119,7 +107,7 @@ export function toDatetimeLocal(iso: string | undefined | null): string {
 export function buildProgrammingTaskPayload(
   data: AssignmentFormValues,
 ): ProgrammingTaskPayload | undefined {
-  if (!supportsCode(data.type) || !data.enableCodeCheck) return undefined;
+  if (!data.codeCheckEnabled) return undefined;
   return {
     language: data.language as 'C' | 'CPP' | 'PYTHON',
     testMode: 'UNIT_TEST',
@@ -145,7 +133,7 @@ interface ExistingAssignmentValues {
   description?: string | null;
   maxScore?: number | null;
   deadline?: string | null;
-  type?: AssignmentType | null;
+  codeCheckEnabled?: boolean | null;
   programmingTask?: ExistingProgrammingTask | null;
 }
 
@@ -160,8 +148,7 @@ export function toFormDefaults(existing: ExistingAssignmentValues): AssignmentFo
     description: existing.description ?? '',
     maxScore: existing.maxScore ?? 100,
     deadline: toDatetimeLocal(existing.deadline ?? undefined),
-    type: existing.type ?? AssignmentType.CODE,
-    enableCodeCheck: task != null,
+    codeCheckEnabled: existing.codeCheckEnabled ?? false,
     language: task?.language ?? undefined,
     ciConfigTemplate: task?.ciConfigTemplate ?? '',
     functionSignature: task?.functionSignature ?? '',
@@ -176,8 +163,7 @@ export const emptyFormDefaults: AssignmentFormValues = {
   description: '',
   maxScore: 100,
   deadline: '',
-  type: AssignmentType.CODE,
-  enableCodeCheck: false,
+  codeCheckEnabled: false,
   ciConfigTemplate: '',
   functionSignature: '',
   testFileContent: '',
