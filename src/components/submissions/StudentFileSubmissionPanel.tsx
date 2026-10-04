@@ -12,7 +12,11 @@ import {
 } from '@/lib/api/submissionAttachments';
 import type { SubmissionResponse } from '@/lib/api/submissions';
 import type { components } from '@/lib/api/types/index';
-import { SubmissionFileState, isFileStateEditable } from '@/utils/assignmentType';
+import {
+  SubmissionFileState,
+  isFileStateEditable,
+  isFileStateUploadAllowed,
+} from '@/utils/assignmentType';
 import { Box, Button, Divider, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -36,6 +40,7 @@ export const StudentFileSubmissionPanel = ({
 
   const fileState = (submission?.fileState ?? null) as SubmissionFileState | null;
   const editable = isFileStateEditable(fileState) || submission == null;
+  const canUpload = isFileStateUploadAllowed(fileState) || submission == null;
 
   useEffect(() => {
     if (submission?.id == null) return;
@@ -117,13 +122,15 @@ export const StudentFileSubmissionPanel = ({
 
   return (
     <Stack spacing={2}>
-      <SubmissionStateBanner
-        fileState={fileState}
-        returnComment={submission?.returnComment}
-        canTurnIn={attachments.length > 0}
-        onTurnIn={handleTurnIn}
-        turningIn={turningIn}
-      />
+      {fileState != null && (
+        <SubmissionStateBanner
+          fileState={fileState}
+          returnComment={submission?.returnComment}
+          canTurnIn={attachments.length > 0}
+          onTurnIn={handleTurnIn}
+          turningIn={turningIn}
+        />
+      )}
 
       <Box>
         <Typography variant="overline" color="text.secondary" fontWeight={700}>
@@ -137,7 +144,7 @@ export const StudentFileSubmissionPanel = ({
         />
       </Box>
 
-      {editable && (
+      {canUpload && (
         <>
           <Divider />
           <FileDropzone onFiles={setPendingFiles} disabled={uploading} />

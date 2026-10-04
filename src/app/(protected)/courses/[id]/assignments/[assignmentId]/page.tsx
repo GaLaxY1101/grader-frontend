@@ -85,7 +85,6 @@ export default async function AssignmentDetailPage({
   const programmingTask = assignment?.programmingTask;
   const hasCodeCheck = programmingTask != null;
   const acceptsCode = assignment?.codeCheckEnabled ?? false;
-  const acceptsFiles = true;
 
   return (
     <Box sx={{ p: 4 }}>
@@ -199,6 +198,19 @@ export default async function AssignmentDetailPage({
           />
         </CardContent>
 
+        {/* Student: file submission panel (after Assignment files) */}
+        {isStudent && (
+          <>
+            <Divider />
+            <CardContent sx={{ p: 3 }}>
+              <StudentFileSubmissionPanel
+                assignmentId={assignmentId}
+                initialSubmission={mySubmission ?? null}
+              />
+            </CardContent>
+          </>
+        )}
+
         {/* Student: current submission summary */}
         {isStudent && mySubmission != null && (
           <>
@@ -235,8 +247,8 @@ export default async function AssignmentDetailPage({
           </>
         )}
 
-        {/* Student: submit form */}
-        {isStudent && (
+        {/* Student: submit form (code check only) */}
+        {isStudent && acceptsCode && hasCodeCheck && (
           <>
             <Divider />
             <CardContent sx={{ p: 3 }}>
@@ -253,23 +265,13 @@ export default async function AssignmentDetailPage({
                   />
                 )}
               </Box>
-              {acceptsCode && hasCodeCheck && (
-                <SubmissionForm
-                  assignmentId={assignmentId}
-                  language={programmingTask?.language}
-                  initialSubmissionId={mySubmission?.id}
-                  functionSignature={programmingTask?.functionSignature}
-                  initialAttempts={myAttempts}
-                />
-              )}
-              {acceptsFiles && (
-                <Box sx={{ mt: acceptsCode && hasCodeCheck ? 3 : 0 }}>
-                  <StudentFileSubmissionPanel
-                    assignmentId={assignmentId}
-                    initialSubmission={mySubmission ?? null}
-                  />
-                </Box>
-              )}
+              <SubmissionForm
+                assignmentId={assignmentId}
+                language={programmingTask?.language}
+                initialSubmissionId={mySubmission?.id}
+                functionSignature={programmingTask?.functionSignature}
+                initialAttempts={myAttempts}
+              />
             </CardContent>
           </>
         )}

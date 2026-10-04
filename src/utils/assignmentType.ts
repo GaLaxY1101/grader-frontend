@@ -9,3 +9,8 @@ export type SubmissionFileState = (typeof SubmissionFileState)[keyof typeof Subm
 
 export const isFileStateEditable = (state: SubmissionFileState | undefined | null): boolean =>
   state === SubmissionFileState.DRAFT || state === SubmissionFileState.RETURNED;
+
+export const isFileStateUploadAllowed = (state: SubmissionFileState | undefined | null): boolean =>
+  state === SubmissionFileState.DRAFT ||
+  state === SubmissionFileState.RETURNED ||
+  state === SubmissionFileState.GRADED;
